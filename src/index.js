@@ -50,19 +50,19 @@
 
 'use strict';
 
-var object =    require('blear.utils.object');
-var array =     require('blear.utils.array');
-var typeis =    require('blear.utils.typeis');
-var url =       require('blear.utils.url');
-var time =      require('blear.utils.time');
-var number =    require('blear.utils.number');
-var path =      require('blear.utils.path');
-var date =      require('blear.utils.date');
-var event =     require('blear.core.event');
-var navURL =    require('blear.core.url');
+var object = require('blear.utils.object');
+var array = require('blear.utils.array');
+var typeis = require('blear.utils.typeis');
+var url = require('blear.utils.url');
+var time = require('blear.utils.time');
+var number = require('blear.utils.number');
+var path = require('blear.utils.path');
+var date = require('blear.utils.date');
+var event = require('blear.core.event');
+var navURL = require('blear.core.url');
 var attribute = require('blear.core.attribute');
-var hashbang =  require('blear.core.hashbang');
-var Events =    require('blear.classes.events');
+var hashbang = require('blear.core.hashbang');
+var Events = require('blear.classes.events');
 
 var win = window;
 var doc = win.document;
@@ -314,6 +314,7 @@ var Router = Events.extend({
     destroy: function () {
         var the = this;
 
+        the[_destoryed] = true;
         event.un(win, 'hashchange', the[_onPopState]);
         the.Super.destroy();
     }
@@ -333,6 +334,7 @@ var _lastMatches = Router.sole();
 var _lastRuler = Router.sole();
 var _executeRoute = Router.sole();
 var _processing = Router.sole();
+var _destoryed = Router.sole();
 var _historyIndex = Router.sole();
 var _current = Router.sole();
 var _pushHistory = Router.sole();
@@ -363,6 +365,10 @@ pro[_initPopStateEvent] = function () {
 
     // init event
     the[_onPopState] = function (ev) {
+        if (the[_destoryed]) {
+            return;
+        }
+
         // webkit 浏览器会主动触发一次 popSatte，并且它的优先级比 nextTick 高
         // 所以，可以借此机会清除定时器
         clearTimeout(timer);
