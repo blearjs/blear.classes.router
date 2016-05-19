@@ -20,7 +20,7 @@ describe('测试文件', function () {
         var change = 0;
         var afterChange = 0;
         var delay = function (fn) {
-            setTimeout(fn, 30);
+            setTimeout(fn, 300);
         };
         var beforeChangeRoute = null;
         var changeRoute = null;
@@ -81,6 +81,7 @@ describe('测试文件', function () {
                 location.hash = '#!/string/?a=1';
                 delay(next);
             })
+                
             .task(function (next) {
                 expect(beforeChange).toEqual(2);
                 expect(change).toEqual(2);
@@ -94,6 +95,7 @@ describe('测试文件', function () {
                 location.hash = '#!/expression/123/?a=2';
                 delay(next);
             })
+                
             .task(function (next) {
                 expect(beforeChange).toEqual(3);
                 expect(change).toEqual(3);
@@ -233,12 +235,6 @@ describe('测试文件', function () {
                 expect(changeRoute.pathname).toEqual('/string');
                 expect(changeRoute.query.what).toEqual('3');
                 expect(changeRoute.data.what).toEqual(2);
-                delay(next);
-            })
-            .task(function (next) {
-                router.destroy();
-                location.hash = '#';
-                expect(beforeChange).toEqual(9);
                 delay(next);
             })
             .follow(done);
