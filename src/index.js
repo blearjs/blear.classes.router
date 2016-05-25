@@ -57,7 +57,7 @@ var defaults = {
      */
     maxLength: 10
 };
-
+var ROUTE_METHODS = ['redirect', 'rewrite', 'rewriteQuery'];
 var Route = Events.extend({
     className: 'Route',
     constructor: function (router, meta, state) {
@@ -69,6 +69,17 @@ var Route = Events.extend({
         the.router = router;
         the.rewriteList = [];
         object.assign(the, meta);
+
+        // 注入 router 方法
+        array.each(ROUTE_METHODS, function (index, method) {
+            the[method] = function () {
+                var args = arguments;
+
+                the.router._next(function () {
+                    this[method].apply(this, args);
+                });
+            };
+        });
     },
 
     /**
@@ -82,19 +93,6 @@ var Route = Events.extend({
         object.assign(the.data, data);
 
         return the;
-    },
-
-
-    redirect: function () {
-        this.router.redirect.apply(this.router, arguments);
-    },
-
-    rewrite: function () {
-        this.router.rewrite.apply(this.router, arguments);
-    },
-
-    rewriteQuery: function () {
-        this.router.rewriteQuery.apply(this.router, arguments);
     }
 });
 var _rewrite = Route.sole();
@@ -286,6 +284,18 @@ var Router = Events.extend({
 
 
     /**
+     * 下一步，给 route 使用
+     * @param _do
+     * @private
+     */
+    _next: function (_do) {
+        var the = this;
+
+        the[_nextDo] = _do;
+    },
+
+
+    /**
      * 销毁实例
      */
     destroy: function () {
@@ -296,6 +306,7 @@ var Router = Events.extend({
     }
 });
 var _options = Router.sole();
+var _nextDo = Router.sole();
 var _matchList = Router.sole();
 var _notMatch = Router.sole();
 var _initPopStateEvent = Router.sole();
@@ -534,6 +545,11 @@ pro[_executeRoute] = function (route, matches, ruler) {
 
                 the[_processing] = false;
                 the.emit('afterChange', changed);
+
+                if (the[_nextDo]) {
+                    the[_nextDo].call(the);
+                    the[_nextDo] = null;
+                }
             });
         };
 
@@ -618,7 +634,7 @@ pro[_dropChange] = function () {
 
     the.history.splice(current + 1);
     the.emit('dropChange', hashbang.toString());
-    navURL.replaceHash(hashbang.set(currentRoute.path));
+    the[_replaceState](hashbang.set(currentRoute.path));
 };
 
 
