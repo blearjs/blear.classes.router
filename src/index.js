@@ -86,15 +86,15 @@ var Route = Events.extend({
 
 
     redirect: function () {
-        this.router.redirect.apply(this, arguments);
+        this.router.redirect.apply(this.router, arguments);
     },
 
     rewrite: function () {
-        this.router.rewrite.apply(this, arguments);
+        this.router.rewrite.apply(this.router, arguments);
     },
 
     rewriteQuery: function () {
-        this.router.rewriteQuery.apply(this, arguments);
+        this.router.rewriteQuery.apply(this.router, arguments);
     }
 });
 var _rewrite = Route.sole();
