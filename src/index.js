@@ -60,12 +60,13 @@ var defaults = {
 
 var Route = Events.extend({
     className: 'Route',
-    constructor: function (meta, state) {
+    constructor: function (router, meta, state) {
         var the = this;
 
         Route.parent(the);
         meta.data = {};
         meta.state = state;
+        the.router = router;
         the.rewriteList = [];
         object.assign(the, meta);
     },
@@ -81,6 +82,19 @@ var Route = Events.extend({
         object.assign(the.data, data);
 
         return the;
+    },
+
+
+    redirect: function () {
+        this.router.redirect.apply(this, arguments);
+    },
+
+    rewrite: function () {
+        this.router.rewrite.apply(this, arguments);
+    },
+
+    rewriteQuery: function () {
+        this.router.rewriteQuery.apply(this, arguments);
     }
 });
 var _rewrite = Route.sole();
@@ -351,7 +365,7 @@ pro[_parseState] = function (state) {
     var meta = hashbang.parse();
     var path = meta.path;
     state.timeStamp = state.timeStamp || date.now();
-    var route = new Route(meta, state);
+    var route = new Route(the, meta, state);
 
     array.each(the[_matchList], function (index, item) {
         switch (item.type) {
