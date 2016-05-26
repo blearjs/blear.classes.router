@@ -291,7 +291,11 @@ var Router = Events.extend({
     _next: function (_do) {
         var the = this;
 
-        the[_nextDo] = _do;
+        if (the[_processing]) {
+            the[_nextDo] = _do;
+        } else {
+            _do.apply(the)
+        }
     },
 
 
