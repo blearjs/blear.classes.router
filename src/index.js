@@ -623,7 +623,7 @@ pro[_resolvePath] = function (to) {
     var toRet = url.parse(to);
 
     return {
-        path: hashbang.set(path.join(from, toRet.pathname) + toRet.search)
+        path: hashbang.set(path.resolve(from, toRet.pathname) + toRet.search)
     };
 };
 
