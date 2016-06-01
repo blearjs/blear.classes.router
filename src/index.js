@@ -86,7 +86,7 @@ var Route = Events.extend({
          * @returns {*}
          */
         the.resolve = function (to) {
-            return hashbang.set(url.resolve(the.router.path, to));
+            return hashbang.set(url.resolve(the.path, to));
         };
     },
 
