@@ -46,7 +46,6 @@
     "blear.utils.path": "1.x",
     "blear.utils.date": "1.x",
     "blear.core.event": "1.x",
-    "blear.core.url": "1.x",
     "blear.core.attribute": "1.x",
     "blear.core.hashbang": "1.x",
     "blear.classes.events": "1.x"

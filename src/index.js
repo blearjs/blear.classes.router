@@ -22,7 +22,6 @@ var number = require('blear.utils.number');
 var path = require('blear.utils.path');
 var date = require('blear.utils.date');
 var event = require('blear.core.event');
-var navURL = require('blear.core.url');
 var attribute = require('blear.core.attribute');
 var hashbang = require('blear.core.hashbang');
 var Events = require('blear.classes.events');
@@ -80,6 +79,15 @@ var Route = Events.extend({
                 });
             };
         });
+
+        /**
+         * 解决目标路径
+         * @param to
+         * @returns {*}
+         */
+        the.resolve = function (to) {
+            return hashbang.set(url.resolve(the.router.path, to));
+        };
     },
 
     /**
@@ -617,13 +625,10 @@ pro[_resolvePath] = function (to) {
     }
 
     var currentRoute = the.history[current];
-    var from = currentRoute.pathname;
-
-
-    var toRet = url.parse(to);
+    var from = currentRoute.path;
 
     return {
-        path: hashbang.set(path.resolve(from, toRet.pathname) + toRet.search)
+        path: hashbang.set(url.resolve(from, to))
     };
 };
 
