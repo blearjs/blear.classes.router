@@ -31,8 +31,7 @@ describe('测试文件', function () {
             });
         };
 
-        pipe('_onChange', function (done) {
-            var changeTimes = 0;
+        pipe('#_change', function (done) {
             var beforeTimes = 0;
             var afterTimes = 0;
             var router = new Router();
@@ -61,7 +60,6 @@ describe('测试文件', function () {
                     delay(next);
                 })
                 .task(function (next) {
-                    expect(changeTimes).toEqual(3);
                     expect(beforeTimes).toEqual(3);
                     expect(afterTimes).toEqual(3);
                     expect(location.hash).toEqual('#!/b');
@@ -73,6 +71,10 @@ describe('测试文件', function () {
         pipe('#redirect', function (done) {
             var changeTimes = 0;
             var router = new Router();
+
+            router.on('beforeChange', function () {
+                changeTimes++;
+            });
         
             router.start();
         
@@ -96,6 +98,10 @@ describe('测试文件', function () {
         pipe('#rewrite', function (done) {
             var changeTimes = 0;
             var router = new Router();
+
+            router.on('beforeChange', function () {
+                changeTimes++;
+            });
         
             router.start();
         
@@ -119,6 +125,10 @@ describe('测试文件', function () {
         pipe('#rewriteQuery', function (done) {
             var changeTimes = 0;
             var router = new Router();
+
+            router.on('beforeChange', function () {
+                changeTimes++;
+            });
 
             router.start();
 
@@ -154,6 +164,10 @@ describe('测试文件', function () {
             var changeTimes = 0;
             var router = new Router();
 
+            router.on('beforeChange', function () {
+                changeTimes++;
+            });
+
             router.start();
 
             howdo
@@ -187,6 +201,11 @@ describe('测试文件', function () {
             var matchTimes = 0;
             var routeList = [];
             var router = new Router();
+
+            router.on('beforeChange', function (route) {
+                changeTimes++;
+                routeList.push(route);
+            });
 
             router.match(function (route, next) {
                 matchTimes++;
@@ -225,6 +244,11 @@ describe('测试文件', function () {
             var matchTimes = 0;
             var routeList = [];
             var router = new Router();
+
+            router.on('beforeChange', function (route) {
+                changeTimes++;
+                routeList.push(route);
+            });
 
             router.match(function (route, next) {
                 matchTimes++;
@@ -274,6 +298,11 @@ describe('测试文件', function () {
             var routeList = [];
             var router = new Router();
 
+            router.on('beforeChange', function (route) {
+                changeTimes++;
+                routeList.push(route);
+            });
+
             router.match('/a', function (route, next) {
                 matchTimes++;
                 next();
@@ -311,6 +340,11 @@ describe('测试文件', function () {
             var matchTimes = 0;
             var routeList = [];
             var router = new Router();
+
+            router.on('beforeChange', function (route) {
+                changeTimes++;
+                routeList.push(route);
+            });
 
             router.match('/a', function (route, next) {
                 matchTimes++;
@@ -356,6 +390,11 @@ describe('测试文件', function () {
             var matchTimes = 0;
             var routeList = [];
             var router = new Router();
+
+            router.on('beforeChange', function (route) {
+                changeTimes++;
+                routeList.push(route);
+            });
 
             router.otherwise(function () {
                 return 'otherwise';
