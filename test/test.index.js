@@ -31,16 +31,11 @@ describe('测试文件', function () {
             });
         };
 
-        pipe('options.onChange', function (done) {
+        pipe('_onChange', function (done) {
             var changeTimes = 0;
             var beforeTimes = 0;
             var afterTimes = 0;
-            var router = new Router({
-                onChange: function (route, next) {
-                    changeTimes++;
-                    next(true);
-                }
-            });
+            var router = new Router();
 
             router.on('beforeChange', function () {
                 beforeTimes++;
@@ -77,12 +72,7 @@ describe('测试文件', function () {
         
         pipe('#redirect', function (done) {
             var changeTimes = 0;
-            var router = new Router({
-                onChange: function (route, next) {
-                    changeTimes++;
-                    next(true);
-                }
-            });
+            var router = new Router();
         
             router.start();
         
@@ -105,12 +95,7 @@ describe('测试文件', function () {
 
         pipe('#rewrite', function (done) {
             var changeTimes = 0;
-            var router = new Router({
-                onChange: function (route, next) {
-                    changeTimes++;
-                    next(true);
-                }
-            });
+            var router = new Router();
         
             router.start();
         
@@ -133,12 +118,7 @@ describe('测试文件', function () {
 
         pipe('#rewriteQuery', function (done) {
             var changeTimes = 0;
-            var router = new Router({
-                onChange: function (route, next) {
-                    changeTimes++;
-                    next(true);
-                }
-            });
+            var router = new Router();
 
             router.start();
 
@@ -172,12 +152,7 @@ describe('测试文件', function () {
 
         pipe('#resolve', function (done) {
             var changeTimes = 0;
-            var router = new Router({
-                onChange: function (route, next) {
-                    changeTimes++;
-                    next(true);
-                }
-            });
+            var router = new Router();
 
             router.start();
 
@@ -211,13 +186,7 @@ describe('测试文件', function () {
             var changeTimes = 0;
             var matchTimes = 0;
             var routeList = [];
-            var router = new Router({
-                onChange: function (route, next) {
-                    changeTimes++;
-                    routeList.push(route);
-                    next(true);
-                }
-            });
+            var router = new Router();
 
             router.match(function (route, next) {
                 matchTimes++;
@@ -255,13 +224,7 @@ describe('测试文件', function () {
             var changeTimes = 0;
             var matchTimes = 0;
             var routeList = [];
-            var router = new Router({
-                onChange: function (route, next) {
-                    changeTimes++;
-                    routeList.push(route);
-                    next(true);
-                }
-            });
+            var router = new Router();
 
             router.match(function (route, next) {
                 matchTimes++;
@@ -309,13 +272,7 @@ describe('测试文件', function () {
             var changeTimes = 0;
             var matchTimes = 0;
             var routeList = [];
-            var router = new Router({
-                onChange: function (route, next) {
-                    changeTimes++;
-                    routeList.push(route);
-                    next(true);
-                }
-            });
+            var router = new Router();
 
             router.match('/a', function (route, next) {
                 matchTimes++;
@@ -353,13 +310,7 @@ describe('测试文件', function () {
             var changeTimes = 0;
             var matchTimes = 0;
             var routeList = [];
-            var router = new Router({
-                onChange: function (route, next) {
-                    changeTimes++;
-                    routeList.push(route);
-                    next(true);
-                }
-            });
+            var router = new Router();
 
             router.match('/a', function (route, next) {
                 matchTimes++;
@@ -404,13 +355,7 @@ describe('测试文件', function () {
             var changeTimes = 0;
             var matchTimes = 0;
             var routeList = [];
-            var router = new Router({
-                onChange: function (route, next) {
-                    changeTimes++;
-                    routeList.push(route);
-                    next(true);
-                }
-            });
+            var router = new Router();
 
             router.otherwise(function () {
                 return 'otherwise';

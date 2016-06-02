@@ -50,16 +50,7 @@ var defaults = {
      * 是否严格模式，默认 false，即默认忽略末尾“/”
      * @type Boolean
      */
-    strict: false,
-
-    /**
-     * 路由改变之后
-     * @param route
-     * @param done
-     */
-    onChange: function (route, done) {
-        done(true);
-    }
+    strict: false
 };
 var ROUTE_METHODS = ['redirect', 'rewrite', 'rewriteQuery', 'resolve'];
 var Route = Events.extend({
@@ -340,6 +331,17 @@ var Router = Events.extend({
 
 
     /**
+     * 私有方法
+     * @param route {Object} 路由
+     * @param next {Function} 下一步
+     * @private
+     */
+    _change: function (route, next) {
+        next(true);
+    },
+
+
+    /**
      * 销毁实例
      */
     destroy: function () {
@@ -571,7 +573,6 @@ pro[_replaceState] = function (url) {
  */
 pro[_executeRoute] = function (route, matches, ruler) {
     var the = this;
-    var options = the[_options];
 
     // 先进入历史
     route.matched = Boolean(matches);
@@ -608,7 +609,7 @@ pro[_executeRoute] = function (route, matches, ruler) {
      */
     var spotSaving = function () {
         the.emit('beforeChange', route);
-        options.onChange(route, function (changed) {
+        the._change(route, function (changed) {
             the[_processing] = false;
             the.emit('afterChange', route, changed);
 
