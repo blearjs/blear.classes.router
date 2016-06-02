@@ -283,16 +283,13 @@ var Router = Events.extend({
      */
     rewrite: function (to) {
         var the = this;
+        var current = the[_current];
+        var currentRoute = the.history[current];
+        var resolveRet = the[_resolvePath](to);
 
-        time.nextTick(function () {
-            var current = the[_current];
-            var currentRoute = the.history[current];
-            var resolveRet = the[_resolvePath](to);
-
-            the[_replaceState](resolveRet.path);
-            currentRoute[_rewrite](hashbang.parse());
-            the.emit('rewriteHistory', the.history[current]);
-        });
+        the[_replaceState](resolveRet.path);
+        currentRoute[_rewrite](hashbang.parse());
+        the.emit('rewriteHistory', the.history[current]);
 
         return the;
     },
@@ -306,16 +303,13 @@ var Router = Events.extend({
      */
     rewriteQuery: function (key, val) {
         var the = this;
+        var current = the[_current];
+        var currentRoute = the.history[current];
+        var url = hashbang.setQuery(key, val);
 
-        time.nextTick(function () {
-            var current = the[_current];
-            var currentRoute = the.history[current];
-            var url = hashbang.setQuery(key, val);
-
-            the[_replaceState](url);
-            currentRoute[_rewrite](hashbang.parse());
-            the.emit('rewriteHistory', the.history[the[_current]]);
-        });
+        the[_replaceState](url);
+        currentRoute[_rewrite](hashbang.parse());
+        the.emit('rewriteHistory', the.history[the[_current]]);
 
         return the;
     },
