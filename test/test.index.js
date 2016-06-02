@@ -13,19 +13,21 @@ var howdo = require('blear.utils.howdo');
 
 describe('测试文件', function () {
     var delay = function (next) {
-        setTimeout(next);
+        setTimeout(next, 100);
     };
 
     it('water test', function (done) {
-        var water = howdo;
+        var water = howdo.task(function (next) {
+            next();
+        });
         var pipe = function (id, task) {
             water = water.task(function (next) {
                 location.hash = '#';
                 delay(next);
             });
-            water = water.task(function (done) {
+            water = water.task(function (next) {
                 console.log('test>>', id);
-                task(done);
+                task(next);
             });
         };
 
@@ -47,6 +49,8 @@ describe('测试文件', function () {
             router.on('afterChange', function () {
                 afterTimes++;
             });
+
+            router.start();
 
             howdo
                 .task(function (next) {
@@ -70,7 +74,7 @@ describe('测试文件', function () {
                 })
                 .follow(done);
         });
-
+        
         pipe('#redirect', function (done) {
             var changeTimes = 0;
             var router = new Router({
@@ -79,7 +83,9 @@ describe('测试文件', function () {
                     next(true);
                 }
             });
-
+        
+            router.start();
+        
             howdo
                 .task(function (next) {
                     router.redirect('/a');
@@ -105,7 +111,9 @@ describe('测试文件', function () {
                     next(true);
                 }
             });
-
+        
+            router.start();
+        
             howdo
                 .task(function (next) {
                     router.rewrite('/a');
@@ -132,9 +140,11 @@ describe('测试文件', function () {
                 }
             });
 
+            router.start();
+
             howdo
                 .task(function (next) {
-                    router.rewriteQuery({a:1});
+                    router.rewriteQuery({a: 1});
                     delay(next);
                 })
                 .task(function (next) {
@@ -160,6 +170,238 @@ describe('测试文件', function () {
                 .follow(done);
         });
 
+        pipe('#resolve', function (done) {
+            var changeTimes = 0;
+            var router = new Router({
+                onChange: function (route, next) {
+                    changeTimes++;
+                    next(true);
+                }
+            });
+
+            router.start();
+
+            howdo
+                .task(function (next) {
+                    var ret = router.resolve('/a/b/c');
+                    expect(ret).toMatch('#!/a/b/c');
+                    location.href = ret;
+                    delay(next);
+                })
+                .task(function (next) {
+                    var ret = router.resolve('..');
+                    expect(ret).toMatch('#!/a/');
+                    location.href = ret;
+                    delay(next);
+                })
+                .task(function (next) {
+                    expect(location.hash).toEqual('#!/a/');
+                    router.destroy();
+                    delay(next);
+                })
+                .task(function (next) {
+                    expect(changeTimes).toEqual(3);
+                    expect(location.hash).toEqual('#!/a/');
+                    delay(next);
+                })
+                .follow(done);
+        });
+
+        pipe('#match(fn) 无具名路由匹配', function (done) {
+            var changeTimes = 0;
+            var matchTimes = 0;
+            var routeList = [];
+            var router = new Router({
+                onChange: function (route, next) {
+                    changeTimes++;
+                    routeList.push(route);
+                    next(true);
+                }
+            });
+
+            router.match(function (route, next) {
+                matchTimes++;
+                next();
+            });
+
+            router.start();
+
+            howdo
+                .task(function (next) {
+                    location.hash = '#!/a';
+                    delay(next);
+                })
+                .task(function (next) {
+                    location.hash = '#!/b';
+                    delay(next);
+                })
+                .task(function (next) {
+                    router.destroy();
+                    delay(next);
+                })
+                .task(function (next) {
+                    expect(matchTimes).toEqual(0);
+                    expect(changeTimes).toEqual(3);
+                    expect(routeList.length).toEqual(3);
+                    expect(routeList[0].controller).toEqual(null);
+                    expect(routeList[1].controller).toEqual(null);
+                    expect(routeList[2].controller).toEqual(null);
+                    delay(next);
+                })
+                .follow(done);
+        });
+
+        pipe('#match(fn) 有具名路由匹配', function (done) {
+            var changeTimes = 0;
+            var matchTimes = 0;
+            var routeList = [];
+            var router = new Router({
+                onChange: function (route, next) {
+                    changeTimes++;
+                    routeList.push(route);
+                    next(true);
+                }
+            });
+
+            router.match(function (route, next) {
+                matchTimes++;
+                next();
+            });
+
+            router.match('/a', function () {
+                return 'a';
+            });
+
+            router.match('/b', function (resolve) {
+                setTimeout(function () {
+                    resolve('b');
+                });
+            });
+
+            router.start();
+
+            howdo
+                .task(function (next) {
+                    location.hash = '#!/a';
+                    delay(next);
+                })
+                .task(function (next) {
+                    location.hash = '#!/b';
+                    delay(next);
+                })
+                .task(function (next) {
+                    router.destroy();
+                    delay(next);
+                })
+                .task(function (next) {
+                    expect(matchTimes).toEqual(2);
+                    expect(routeList.length).toEqual(3);
+                    expect(routeList[0].controller).toEqual(null);
+                    expect(routeList[1].controller).toEqual('a');
+                    expect(routeList[2].controller).toEqual('b');
+                    expect(changeTimes).toEqual(3);
+                    delay(next);
+                })
+                .follow(done);
+        });
+
+        pipe('#match(rule, fn) 无具名路由', function (done) {
+            var changeTimes = 0;
+            var matchTimes = 0;
+            var routeList = [];
+            var router = new Router({
+                onChange: function (route, next) {
+                    changeTimes++;
+                    routeList.push(route);
+                    next(true);
+                }
+            });
+
+            router.match('/a', function (route, next) {
+                matchTimes++;
+                next();
+            });
+
+            router.start();
+
+            howdo
+                .task(function (next) {
+                    location.hash = '#!/a';
+                    delay(next);
+                })
+                .task(function (next) {
+                    location.hash = '#!/b';
+                    delay(next);
+                })
+                .task(function (next) {
+                    router.destroy();
+                    delay(next);
+                })
+                .task(function (next) {
+                    expect(matchTimes).toEqual(0);
+                    expect(routeList.length).toEqual(3);
+                    expect(routeList[0].controller).toEqual(null);
+                    expect(routeList[1].controller).toEqual(null);
+                    expect(routeList[2].controller).toEqual(null);
+                    expect(changeTimes).toEqual(3);
+                    delay(next);
+                })
+                .follow(done);
+        });
+
+        pipe('#match(rule, fn) 有具名路由匹配', function (done) {
+            var changeTimes = 0;
+            var matchTimes = 0;
+            var routeList = [];
+            var router = new Router({
+                onChange: function (route, next) {
+                    changeTimes++;
+                    routeList.push(route);
+                    next(true);
+                }
+            });
+
+            router.match('/a', function (route, next) {
+                matchTimes++;
+                next();
+            });
+
+            router.match('/a', function () {
+                return 'a';
+            });
+
+            router.match('/b', function (resolve) {
+                setTimeout(function () {
+                    resolve('b');
+                });
+            });
+
+            router.start();
+
+            howdo
+                .task(function (next) {
+                    location.hash = '#!/a';
+                    delay(next);
+                })
+                .task(function (next) {
+                    location.hash = '#!/b';
+                    delay(next);
+                })
+                .task(function (next) {
+                    expect(matchTimes).toEqual(1);
+                    expect(routeList.length).toEqual(3);
+                    expect(routeList[0].controller).toEqual(null);
+                    expect(routeList[1].controller).toEqual('a');
+                    expect(routeList[2].controller).toEqual('b');
+                    expect(changeTimes).toEqual(3);
+                    router.destroy();
+                    delay(next);
+                })
+                .follow(done);
+        });
+
+        // pipe('#match');
+
         water.follow(done);
-    });
+    }, 10000000);
 });

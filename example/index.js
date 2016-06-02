@@ -13,7 +13,7 @@ var Router = require('../src/index');
 var router = new Router({
     onChange: function (route, next) {
         console.log('[change]', route.path, route.controller);
-        next(false);
+        next(true);
     }
 });
 

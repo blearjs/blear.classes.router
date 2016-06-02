@@ -61,7 +61,7 @@ var defaults = {
         done(true);
     }
 };
-var ROUTE_METHODS = ['redirect', 'rewrite', 'rewriteQuery'];
+var ROUTE_METHODS = ['redirect', 'rewrite', 'rewriteQuery', 'resolve'];
 var Route = Events.extend({
     className: 'Route',
     constructor: function (router, meta, state) {
@@ -77,7 +77,11 @@ var Route = Events.extend({
         // 注入 router 方法
         array.each(ROUTE_METHODS, function (index, method) {
             the[method] = function () {
-                the.router[method].apply(the.router, arguments);
+                var ret = the.router[method].apply(the.router, arguments);
+
+                if (ret !== the.router) {
+                    return ret;
+                }
             };
         });
     },
@@ -142,8 +146,21 @@ var Router = Events.extend({
         the[_historyIndex] = 0;
         the[_current] = -1;
         the.history = [];
+    },
+
+
+    /**
+     * 开始启动监听
+     * @returns {Router}
+     */
+    start: function () {
+        var the = this;
+
         the[_initPopStateEvent]();
         the[_initPushStateEvent]();
+        the[_parseState](history.state || the[_getNextState]());
+
+        return the;
     },
 
 
@@ -216,9 +233,9 @@ var Router = Events.extend({
      * @returns {Router}
      *
      * @example
-     * spa.otherwise('/user/:userId', function(resolved){
-         *    require.async('page/user.js', resolved);
-         * });
+     * router.otherwise('/user/:userId', function(resolved){
+     *    require.async('page/user.js', resolved);
+     * });
      */
     otherwise: function (fn) {
         var the = this;
@@ -371,15 +388,15 @@ pro[_getNextState] = function () {
  */
 pro[_initPopStateEvent] = function () {
     var the = this;
-    var timer = time.nextTick(function () {
-        the[_parseState](history.state || the[_getNextState]());
-    });
+    // var timer = time.nextTick(function () {
+    //     the[_parseState](history.state || the[_getNextState]());
+    // });
 
     // init event
     the[_onPopState] = function (ev) {
-        // webkit 浏览器会主动触发一次 popSatte，并且它的优先级比 nextTick 高
-        // 所以，可以借此机会清除定时器
-        clearTimeout(timer);
+        // // webkit 浏览器会主动触发一次 popSatte，并且它的优先级比 nextTick 高
+        // // 所以，可以借此机会清除定时器
+        // clearTimeout(timer);
         the[_parseState](ev.state || the[_getNextState]());
     };
 
@@ -396,6 +413,12 @@ pro[_initPopStateEvent] = function () {
  */
 pro[_parseState] = function (state) {
     var the = this;
+
+    if (the[_processing]) {
+        the[_dropChange]();
+        return;
+    }
+
     var options = the[_options];
     var ruler = null;
     var matches = null;
@@ -406,6 +429,9 @@ pro[_parseState] = function (state) {
     var matchesList = [];
     var routeList = [];
     var pipeList = [];
+
+    the[_current]++;
+    the[_processing] = true;
 
     array.each(the[_matchList], function (index, item) {
         switch (item.type) {
@@ -434,11 +460,11 @@ pro[_parseState] = function (state) {
         }
     });
 
-
-    var nextExecute = function () {
+    var excuteRoute = function () {
         if (pipePath) {
             var fullPath = route.resolve(pipePath);
             the[_lastRoute] = route;
+            the[_processing] = false;
             return the[_pushState](fullPath);
         }
 
@@ -447,7 +473,6 @@ pro[_parseState] = function (state) {
 
     if (ruler) {
         var pipePath;
-
         howdo.each(pipeList, function (index, item, next) {
             if (pipePath) {
                 return next();
@@ -463,10 +488,10 @@ pro[_parseState] = function (state) {
                 pipePath = path;
                 next();
             });
-        }).follow(nextExecute);
+        }).follow(excuteRoute);
     } else {
         ruler = the[_notMatch];
-        time.nextTick(nextExecute);
+        time.nextTick(excuteRoute);
     }
 
     route.id = ruler && ruler.id;
@@ -548,28 +573,10 @@ pro[_executeRoute] = function (route, matches, ruler) {
     var the = this;
     var options = the[_options];
 
-    // if (!ruler) {
-    //     the[_processing] = true;
-    //     the.emit('beforeChange', route, true);
-    //     return options.onChange(route, function () {
-    //         the[_processing] = false;
-    //         the[_lastRoute] = route;
-    //         the[_current]++;
-    //         the.emit('afterChange', route, true);
-    //     });
-    // }
-
     // 先进入历史
     route.matched = Boolean(matches);
     route.controller = ruler && ruler.controller;
     route.done = ruler && ruler.done;
-
-    if (the[_processing]) {
-        the[_dropChange]();
-        return;
-    }
-
-    the[_processing] = true;
 
     if (the[_lastRoute]) {
         // 防止循环引用链过长导致内存泄露
@@ -605,11 +612,10 @@ pro[_executeRoute] = function (route, matches, ruler) {
             the[_processing] = false;
             the.emit('afterChange', route, changed);
 
-            if (!changed && the[_current] > -1) {
+            if (!changed && the[_current] > 0) {
                 the[_dropChange]();
             } else {
                 the[_lastRoute] = route;
-                the[_current]++;
             }
         });
     };
@@ -647,13 +653,10 @@ pro[_pushHistory] = function (route) {
  * @returns {null|Object}
  */
 pro[_resolvePath] = function (to) {
-    var the = this;
-    var current = the[_current];
-    var currentRoute = the.history[current];
-    var from = currentRoute.path;
+    var meta = hashbang.parse();
 
     return {
-        path: hashbang.set(url.resolve(from, to))
+        path: hashbang.set(url.resolve(meta.path, to))
     };
 };
 
@@ -663,6 +666,7 @@ pro[_resolvePath] = function (to) {
  */
 pro[_dropChange] = function () {
     var the = this;
+    the[_current]--;
     var current = the[_current];
     var currentRoute = the.history[current];
 
