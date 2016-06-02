@@ -400,7 +400,44 @@ describe('测试文件', function () {
                 .follow(done);
         });
 
-        // pipe('#match');
+        pipe('#otherwise(fn)', function (done) {
+            var changeTimes = 0;
+            var matchTimes = 0;
+            var routeList = [];
+            var router = new Router({
+                onChange: function (route, next) {
+                    changeTimes++;
+                    routeList.push(route);
+                    next(true);
+                }
+            });
+
+            router.otherwise(function () {
+                return 'otherwise';
+            });
+
+            router.start();
+
+            howdo
+                .task(function (next) {
+                    location.hash = '#!/a';
+                    delay(next);
+                })
+                .task(function (next) {
+                    location.hash = '#!/b';
+                    delay(next);
+                })
+                .task(function (next) {
+                    expect(changeTimes).toEqual(3);
+                    expect(routeList.length).toEqual(3);
+                    expect(routeList[0].controller).toEqual('otherwise');
+                    expect(routeList[1].controller).toEqual('otherwise');
+                    expect(routeList[2].controller).toEqual('otherwise');
+                    router.destroy();
+                    delay(next);
+                })
+                .follow(done);
+        });
 
         water.follow(done);
     }, 10000000);
