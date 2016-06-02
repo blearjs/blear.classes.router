@@ -60,6 +60,7 @@ var Route = Events.extend({
 
         Route.parent(the);
         meta.data = {};
+        meta.nextData = {};
         meta.state = state;
         the.router = router;
         the.rewriteList = [];
@@ -85,7 +86,7 @@ var Route = Events.extend({
     send: function (data) {
         var the = this;
 
-        object.assign(the.data, data);
+        object.assign(the.nextData, data);
 
         return the;
     }
@@ -583,7 +584,9 @@ pro[_executeRoute] = function (route, matches, ruler) {
         // 防止循环引用链过长导致内存泄露
         the[_lastRoute].prev = null;
         the[_lastRoute].next = route;
-        route.data = the[_lastRoute].data;
+        // 数据传递
+        route.data = the[_lastRoute].nextData;
+        the[_lastRoute].nextData = null;
     }
 
     route.prev = the[_lastRoute];
