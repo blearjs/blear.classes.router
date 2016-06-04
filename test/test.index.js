@@ -115,7 +115,7 @@ describe('测试文件', function () {
                     delay(next);
                 })
                 .task(function (next) {
-                    expect(changeTimes).toEqual(1);
+                    expect(changeTimes).toEqual(2);
                     expect(location.hash).toEqual('#!/a');
                     delay(next);
                 })
@@ -153,7 +153,7 @@ describe('测试文件', function () {
                     delay(next);
                 })
                 .task(function (next) {
-                    expect(changeTimes).toEqual(1);
+                    expect(changeTimes).toEqual(4);
                     expect(location.hash).toEqual('#!/?a=3');
                     delay(next);
                 })
