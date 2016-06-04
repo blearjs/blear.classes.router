@@ -50,3 +50,9 @@ router
     .otherwise(function () {
         console.log('404');
     });
+
+document.getElementById('rewrite').onclick = function () {
+    router.rewriteQuery('r', Math.random());
+};
+
+router.start();

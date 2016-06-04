@@ -557,6 +557,7 @@ pro[_replaceState] = function (url) {
     var state = currentRoute.state;
 
     history.replaceState(state, '', url);
+    the[_onPopState](state);
 };
 
 
