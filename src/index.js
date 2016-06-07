@@ -669,6 +669,10 @@ pro[_dropChange] = function () {
     var current = the[_current];
     var currentRoute = the.history[current];
 
+    if (!currentRoute) {
+        return;
+    }
+
     the.history.splice(current + 1);
     the.emit('dropChange', hashbang.toString());
     the[_replaceState](hashbang.set(currentRoute.path));
