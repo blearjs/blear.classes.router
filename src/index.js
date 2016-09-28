@@ -612,8 +612,8 @@ pro[_executeRoute] = function (route, matches, ruler) {
      * 保存现场
      */
     var spotSaving = function () {
-        the.emit('beforeLoad', route);
-        the.emit('afterLoad', route);
+        // the.emit('beforeLoad', route);
+        // the.emit('afterLoad', route);
         the.emit('beforeChange', route);
         the._change(route, function (changed) {
             the[_processing] = false;
