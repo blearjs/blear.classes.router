@@ -391,15 +391,9 @@ pro[_getNextState] = function () {
  */
 pro[_initPopStateEvent] = function () {
     var the = this;
-    // var timer = time.nextTick(function () {
-    //     the[_parseState](history.state || the[_getNextState]());
-    // });
 
     // init event
     the[_onPopState] = function (ev) {
-        // // webkit 浏览器会主动触发一次 popSatte，并且它的优先级比 nextTick 高
-        // // 所以，可以借此机会清除定时器
-        // clearTimeout(timer);
         the[_parseState](ev.state || the[_getNextState]());
     };
 
@@ -553,11 +547,6 @@ pro[_pushState] = function (_url) {
  */
 pro[_replaceState] = function (url) {
     var the = this;
-
-    if (the[_processing]) {
-        return false;
-    }
-
     var current = the[_current];
     var currentRoute = the.history[current];
     var state = currentRoute.state;

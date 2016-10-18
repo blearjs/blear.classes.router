@@ -1,6 +1,6 @@
 {
   "name": "blear.classes.router",
-  "version": "1.0.18",
+  "version": "1.0.19",
   "description": "前端路由类",
   "scripts": {
     "live": "browser-sync start --config bs-config.js",
