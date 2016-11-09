@@ -30,7 +30,6 @@ var Events = require('blear.classes.events');
 var win = window;
 var doc = win.document;
 var history = win.history;
-var reHashbang = /^#!/;
 var routeId = 0;
 var MAX_LENGTH = 10;
 var defaults = {
@@ -50,7 +49,13 @@ var defaults = {
      * 是否严格模式，默认 false，即默认忽略末尾“/”
      * @type Boolean
      */
-    strict: false
+    strict: false,
+
+    /**
+     * hashbang 分隔符
+     * @type String
+     */
+    split: ''
 };
 var ROUTE_METHODS = ['redirect', 'rewrite', 'rewriteQuery', 'resolve'];
 var Route = Events.extend({
@@ -310,7 +315,7 @@ var Router = Events.extend({
         time.nextTick(function () {
             var current = the[_current];
             var currentRoute = the.history[current];
-            var url = hashbang.setQuery(key, val);
+            var url = hashbang.setQuery(key, val, the[_options].split);
 
             the[_replaceState](url);
             currentRoute[_rewrite](hashbang.parse());
@@ -508,7 +513,7 @@ pro[_initPushStateEvent] = function () {
         var el = this;
         var href = attribute.attr(el, 'href');
 
-        if (reHashbang.test(href)) {
+        if (hashbang.is(href, options.split)) {
             the[_pushState](href);
             return false;
         }
@@ -652,7 +657,7 @@ pro[_resolvePath] = function (to) {
     var meta = hashbang.parse();
 
     return {
-        path: hashbang.set(url.resolve(meta.path, to))
+        path: hashbang.set(url.resolve(meta.path, to), this[_options].split)
     };
 };
 
@@ -671,8 +676,8 @@ pro[_dropChange] = function () {
     }
 
     the.history.splice(current + 1);
-    the.emit('dropChange', hashbang.toString());
-    the[_replaceState](hashbang.set(currentRoute.path));
+    the.emit('dropChange', hashbang.get());
+    the[_replaceState](hashbang.set(currentRoute.path, the[_options].split));
 };
 
 
