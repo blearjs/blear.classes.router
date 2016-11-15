@@ -48,11 +48,11 @@ describe('测试文件', function () {
 
             howdo
                 .task(function (next) {
-                    location.hash = '#!/a';
+                    location.hash = '#/a';
                     delay(next);
                 })
                 .task(function (next) {
-                    location.hash = '#!/b';
+                    location.hash = '#/b';
                     delay(next);
                 })
                 .task(function (next) {
@@ -62,7 +62,7 @@ describe('测试文件', function () {
                 .task(function (next) {
                     expect(beforeTimes).toEqual(3);
                     expect(afterTimes).toEqual(3);
-                    expect(location.hash).toEqual('#!/b');
+                    expect(location.hash).toEqual('#/b');
                     delay(next);
                 })
                 .follow(done);
@@ -89,7 +89,7 @@ describe('测试文件', function () {
                 })
                 .task(function (next) {
                     expect(changeTimes).toEqual(2);
-                    expect(location.hash).toEqual('#!/a');
+                    expect(location.hash).toEqual('#/a');
                     delay(next);
                 })
                 .follow(done);
@@ -116,7 +116,7 @@ describe('测试文件', function () {
                 })
                 .task(function (next) {
                     expect(changeTimes).toEqual(2);
-                    expect(location.hash).toEqual('#!/a');
+                    expect(location.hash).toEqual('#/a');
                     delay(next);
                 })
                 .follow(done);
@@ -138,23 +138,23 @@ describe('测试文件', function () {
                     delay(next);
                 })
                 .task(function (next) {
-                    expect(location.hash).toEqual('#!/?a=1');
+                    expect(location.hash).toEqual('#/?a=1');
                     router.rewriteQuery('a', '2');
                     delay(next);
                 })
                 .task(function (next) {
-                    expect(location.hash).toEqual('#!/?a=2');
+                    expect(location.hash).toEqual('#/?a=2');
                     router.rewriteQuery('a=3');
                     delay(next);
                 })
                 .task(function (next) {
-                    expect(location.hash).toEqual('#!/?a=3');
+                    expect(location.hash).toEqual('#/?a=3');
                     router.destroy();
                     delay(next);
                 })
                 .task(function (next) {
                     expect(changeTimes).toEqual(4);
-                    expect(location.hash).toEqual('#!/?a=3');
+                    expect(location.hash).toEqual('#/?a=3');
                     delay(next);
                 })
                 .follow(done);
@@ -173,24 +173,24 @@ describe('测试文件', function () {
             howdo
                 .task(function (next) {
                     var ret = router.resolve('/a/b/c');
-                    expect(ret).toMatch('#!/a/b/c');
+                    expect(ret).toMatch('#/a/b/c');
                     location.href = ret;
                     delay(next);
                 })
                 .task(function (next) {
                     var ret = router.resolve('..');
-                    expect(ret).toMatch('#!/a/');
+                    expect(ret).toMatch('#/a/');
                     location.href = ret;
                     delay(next);
                 })
                 .task(function (next) {
-                    expect(location.hash).toEqual('#!/a/');
+                    expect(location.hash).toEqual('#/a/');
                     router.destroy();
                     delay(next);
                 })
                 .task(function (next) {
                     expect(changeTimes).toEqual(3);
-                    expect(location.hash).toEqual('#!/a/');
+                    expect(location.hash).toEqual('#/a/');
                     delay(next);
                 })
                 .follow(done);
@@ -216,11 +216,11 @@ describe('测试文件', function () {
 
             howdo
                 .task(function (next) {
-                    location.hash = '#!/a';
+                    location.hash = '#/a';
                     delay(next);
                 })
                 .task(function (next) {
-                    location.hash = '#!/b';
+                    location.hash = '#/b';
                     delay(next);
                 })
                 .task(function (next) {
@@ -269,11 +269,11 @@ describe('测试文件', function () {
 
             howdo
                 .task(function (next) {
-                    location.hash = '#!/a';
+                    location.hash = '#/a';
                     delay(next);
                 })
                 .task(function (next) {
-                    location.hash = '#!/b';
+                    location.hash = '#/b';
                     delay(next);
                 })
                 .task(function (next) {
@@ -312,11 +312,11 @@ describe('测试文件', function () {
 
             howdo
                 .task(function (next) {
-                    location.hash = '#!/a';
+                    location.hash = '#/a';
                     delay(next);
                 })
                 .task(function (next) {
-                    location.hash = '#!/b';
+                    location.hash = '#/b';
                     delay(next);
                 })
                 .task(function (next) {
@@ -365,11 +365,11 @@ describe('测试文件', function () {
 
             howdo
                 .task(function (next) {
-                    location.hash = '#!/a';
+                    location.hash = '#/a';
                     delay(next);
                 })
                 .task(function (next) {
-                    location.hash = '#!/b';
+                    location.hash = '#/b';
                     delay(next);
                 })
                 .task(function (next) {
@@ -404,11 +404,11 @@ describe('测试文件', function () {
 
             howdo
                 .task(function (next) {
-                    location.hash = '#!/a';
+                    location.hash = '#/a';
                     delay(next);
                 })
                 .task(function (next) {
-                    location.hash = '#!/b';
+                    location.hash = '#/b';
                     delay(next);
                 })
                 .task(function (next) {
