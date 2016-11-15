@@ -57,10 +57,10 @@ var defaults = {
      */
     split: ''
 };
-var ROUTE_METHODS = ['redirect', 'rewrite', 'rewriteQuery', 'resolve'];
+var ROUTE_METHODS = ['resolve', 'redirect', 'rewrite', 'rewriteQuery'];
 var Route = Events.extend({
     className: 'Route',
-    constructor: function (router, meta, state) {
+    constructor: function (router, meta, state, isPipe) {
         var the = this;
 
         Route.parent(the);
@@ -72,7 +72,8 @@ var Route = Events.extend({
         object.assign(the, meta);
 
         // 注入 router 方法
-        array.each(ROUTE_METHODS, function (index, method) {
+        var injectMethods = isPipe ? ROUTE_METHODS.slice(0, 1) : ROUTE_METHODS;
+        array.each(injectMethods, function (index, method) {
             the[method] = function () {
                 var ret = the.router[method].apply(the.router, arguments);
 
@@ -97,6 +98,8 @@ var Route = Events.extend({
     }
 });
 var _rewrite = Route.sole();
+var _rewriteList = Route.sole();
+
 
 /**
  * 重写
@@ -452,7 +455,7 @@ pro[_parseState] = function (state) {
         if (matches && item.pipe) {
             matchesList.push(matches);
             pipeList.push(item);
-            routeList.push(new Route(the, meta, state));
+            routeList.push(new Route(the, meta, state, true));
             matches = null;
         }
 
