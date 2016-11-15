@@ -22,6 +22,7 @@ var number = require('blear.utils.number');
 var path = require('blear.utils.path');
 var date = require('blear.utils.date');
 var howdo = require('blear.utils.howdo');
+var utilHashbang = require('blear.utils.hashbang');
 var event = require('blear.core.event');
 var attribute = require('blear.core.attribute');
 var hashbang = require('blear.core.hashbang');
@@ -516,7 +517,7 @@ pro[_initPushStateEvent] = function () {
         var el = this;
         var href = attribute.attr(el, 'href');
 
-        if (hashbang.is(href, options.split)) {
+        if (utilHashbang.is(href, options.split)) {
             the[_pushState](href);
             return false;
         }

@@ -1,6 +1,6 @@
 {
   "name": "blear.classes.router",
-  "version": "1.0.20",
+  "version": "1.0.21",
   "description": "前端路由类",
   "scripts": {
     "live": "browser-sync start --config bs-config.js",
@@ -46,6 +46,7 @@
     "blear.utils.path": "1.x",
     "blear.utils.date": "1.x",
     "blear.utils.howdo": "1.x",
+    "blear.utils.hashbang": "1.x",
     "blear.core.event": "1.x",
     "blear.core.attribute": "1.x",
     "blear.core.hashbang": "1.x",
