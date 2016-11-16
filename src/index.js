@@ -376,7 +376,7 @@ var Router = Events.extend({
         var the = this;
 
         event.un(win, 'hashchange', the[_onPopState]);
-        Router.parent.destroy(the);
+        Route.superInvoke('destroy', the);
     }
 });
 var _options = Router.sole();
