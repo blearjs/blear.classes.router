@@ -69,7 +69,9 @@ var Route = Events.extend({
         meta.nextData = {};
         meta.state = state;
         the.router = router;
-        the.rewriteList = [];
+        the.prev = router[_lastRoute];
+        the.next = null;
+        the[_rewriteList] = [];
         object.assign(the, meta);
 
         // 注入 router 方法
@@ -109,7 +111,7 @@ var _rewriteList = Route.sole();
 Route.prototype[_rewrite] = function (meta) {
     var the = this;
 
-    the.rewriteList.push({
+    the[_rewriteList].push({
         path: the.path,
         pathname: the.pathname,
         query: the.query
@@ -588,9 +590,9 @@ pro[_executeRoute] = function (route, matches, ruler) {
         the[_lastRoute].nextData = null;
     }
 
-    route.prev = the[_lastRoute];
-    // 防止循环引用链过长导致内存泄露
-    route.next = null;
+    // route.prev = the[_lastRoute];
+    // // 防止循环引用链过长导致内存泄露
+    // route.next = null;
     the[_pushHistory](route);
 
     /**
