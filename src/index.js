@@ -317,8 +317,8 @@ var Router = Events.extend({
             var currentRoute = the.history[current];
             var resolveRet = the[_resolvePath](to);
 
-            currentRoute = the.history[current] = currentRoute[_rewrite](hashbang.parse());
             the[_replaceState](resolveRet.path);
+            currentRoute = the.history[current] = currentRoute[_rewrite](hashbang.parse());
             the.emit('rewriteHistory', currentRoute);
         });
 
@@ -340,8 +340,8 @@ var Router = Events.extend({
             var currentRoute = the.history[current];
             var url = hashbang.setQuery(key, val, the[_options].split);
 
-            currentRoute = the.history[current] = currentRoute[_rewrite](hashbang.parse());
             the[_replaceState](url);
+            currentRoute = the.history[current] = currentRoute[_rewrite](hashbang.parse());
             the.emit('rewriteHistory', currentRoute);
         });
 
