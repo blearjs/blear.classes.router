@@ -152,7 +152,7 @@ var Router = Events.extend({
         // 匹配列表
         the[_matchList] = [];
         // 未匹配列表
-        the[_notMatch] = null;
+        the[_notFoundMatcher] = null;
         // 上一次匹配结果
         the[_lastRoute] = null;
         // 上一次是否匹配到
@@ -260,7 +260,7 @@ var Router = Events.extend({
         var the = this;
 
         /* istanbul ignore next */
-        if (the[_notMatch]) {
+        if (the[_notFoundMatcher]) {
             throw new TypeError('`otherwise`只允许调用一次');
         }
 
@@ -272,7 +272,7 @@ var Router = Events.extend({
             controller = fn();
         }
 
-        the[_notMatch] = {
+        the[_notFoundMatcher] = {
             done: !async,
             id: routeId++,
             controller: controller,
@@ -381,7 +381,7 @@ var Router = Events.extend({
 });
 var _options = Router.sole();
 var _matchList = Router.sole();
-var _notMatch = Router.sole();
+var _notFoundMatcher = Router.sole();
 var _initPopStateEvent = Router.sole();
 var _initPushStateEvent = Router.sole();
 var _getNextState = Router.sole();
@@ -421,7 +421,7 @@ pro[_initPopStateEvent] = function () {
 
     // init event
     the[_onPopState] = function (ev) {
-        the[_parseState](ev.state || the[_getNextState]());
+        the[_parseState](ev && ev.state || the[_getNextState]());
     };
 
     // 这里使用 popstate 是因为 popstate 在 hashchange 之前，
@@ -443,6 +443,8 @@ pro[_parseState] = function (state) {
         return;
     }
 
+    var a = the[_lastRoute];
+
     var options = the[_options];
     var foundMatcher = null;
     var matches = null;
@@ -450,9 +452,11 @@ pro[_parseState] = function (state) {
     var meta = hashbang.parse();
     var path = meta.path;
     state.timeStamp = state.timeStamp || date.now();
-    var route = new Route(the, meta, state);
+    var startRoute = new Route(the, meta, state);
+    var endRoute = startRoute;
     var matchesList = [];
     var pipeMatcherList = [];
+    var pipePath;
 
     the[_current]++;
     the[_processing] = true;
@@ -486,19 +490,18 @@ pro[_parseState] = function (state) {
 
     var excuteFoundMatcher = function () {
         if (pipePath) {
-            var fullPath = route.resolve(pipePath);
-            the[_lastRoute] = route;
             the[_processing] = false;
-            return the[_pushState](fullPath);
+            the[_lastRoute] = startRoute.prev;
+            the[_replaceState](startRoute.resolve(pipePath));
+            return;
         }
 
-        the[_executeRoute](route, matched, foundMatcher);
+        the[_executeRoute](startRoute, matched, foundMatcher);
     };
 
     if (foundMatcher) {
-        var pipePath;
         howdo.each(pipeMatcherList, function (index, matcher, next) {
-            var route = new Route(the, meta, state, true);
+            var route = endRoute = new Route(the, meta, state, true);
             var matches = matchesList[index];
 
             route.id = foundMatcher.id;
@@ -510,13 +513,13 @@ pro[_parseState] = function (state) {
             });
         }).follow(excuteFoundMatcher);
     } else {
-        foundMatcher = the[_notMatch];
+        foundMatcher = the[_notFoundMatcher];
         time.nextTick(excuteFoundMatcher);
     }
 
-    route.id = foundMatcher && foundMatcher.id;
-    route.rule = foundMatcher && foundMatcher.rule;
-    route.params = typeis.Boolean(matches) ? {} : matches || {};
+    startRoute.id = foundMatcher && foundMatcher.id;
+    startRoute.rule = foundMatcher && foundMatcher.rule;
+    startRoute.params = typeis.Boolean(matches) ? {} : matches || {};
 };
 
 
@@ -572,10 +575,10 @@ pro[_replaceState] = function (url) {
     var the = this;
     var current = the[_current];
     var currentRoute = the.history[current];
-    var state = currentRoute.state;
+    var state = currentRoute ? currentRoute.state : null;
 
     history.replaceState(state, '', url);
-    the[_onPopState](state);
+    the[_onPopState](currentRoute);
 };
 
 
