@@ -443,15 +443,12 @@ pro[_parseState] = function (state) {
         return;
     }
 
-    var a = the[_lastRoute];
-
     var options = the[_options];
     var foundMatcher = null;
-    var matches = null;
-    var matched = false;
     var meta = hashbang.parse();
     var path = meta.path;
     state.timeStamp = state.timeStamp || date.now();
+    var startMatches = null;
     var startRoute = new Route(the, meta, state);
     var endRoute = startRoute;
     var matchesList = [];
@@ -464,29 +461,30 @@ pro[_parseState] = function (state) {
     array.each(the[_matchList], function (index, matcher) {
         switch (matcher.type) {
             case 'string':
-                matches = url.matchPath(path, matcher.rule, {
+                startMatches = url.matchPath(path, matcher.rule, {
                     ignoreCase: options.ignoreCase,
                     strict: options.strict
                 });
                 break;
 
             case 'regexp':
-                matches = path.match(matcher.rule);
+                startMatches = path.match(matcher.rule);
                 break;
         }
 
-        if (matches && matcher.pipe) {
-            matchesList.push(matches);
+        if (startMatches && matcher.pipe) {
+            matchesList.push(startMatches);
             pipeMatcherList.push(matcher);
-            matches = null;
+            startMatches = null;
         }
 
-        if (matches) {
+        if (startMatches) {
             foundMatcher = matcher;
-            matched = true;
             return false;
         }
     });
+
+    foundMatcher = foundMatcher || the[_notFoundMatcher];
 
     var excuteFoundMatcher = function () {
         if (pipePath) {
@@ -496,30 +494,25 @@ pro[_parseState] = function (state) {
             return;
         }
 
-        the[_executeRoute](startRoute, matched, foundMatcher);
+        the[_executeRoute](startRoute, foundMatcher);
     };
 
-    if (foundMatcher) {
-        howdo.each(pipeMatcherList, function (index, matcher, next) {
-            var route = endRoute = new Route(the, meta, state, true);
-            var matches = matchesList[index];
+    howdo.each(pipeMatcherList, function (index, matcher, next) {
+        var route = endRoute = new Route(the, meta, state, true);
+        var matches = matchesList[index];
 
-            route.id = foundMatcher.id;
-            route.rule = foundMatcher.rule;
-            route.params = typeis.Boolean(matches) ? {} : matches || {};
-            matcher.fn(route, function (path) {
-                pipePath = path || pipePath;
-                next();
-            });
-        }).follow(excuteFoundMatcher);
-    } else {
-        foundMatcher = the[_notFoundMatcher];
-        time.nextTick(excuteFoundMatcher);
-    }
+        route.id = foundMatcher.id;
+        route.rule = foundMatcher.rule;
+        route.params = typeis.Boolean(matches) ? {} : matches || {};
+        matcher.fn(route, function (path) {
+            pipePath = path || pipePath;
+            next();
+        });
+    }).follow(excuteFoundMatcher);
 
     startRoute.id = foundMatcher && foundMatcher.id;
     startRoute.rule = foundMatcher && foundMatcher.rule;
-    startRoute.params = typeis.Boolean(matches) ? {} : matches || {};
+    startRoute.params = typeis.Boolean(startMatches) ? {} : startMatches || {};
 };
 
 
@@ -585,14 +578,12 @@ pro[_replaceState] = function (url) {
 /**
  * 执行路由
  * @param route {Object} 路由
- * @param matched {Boolean} 是否已被匹配到
  * @param matcher {Object} 规则
  */
-pro[_executeRoute] = function (route, matched, matcher) {
+pro[_executeRoute] = function (route, matcher) {
     var the = this;
 
     // 先进入历史
-    route.matched = matched;
     route.controller = matcher && matcher.controller;
     route.done = matcher && matcher.done;
 
