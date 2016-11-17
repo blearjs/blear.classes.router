@@ -177,6 +177,7 @@ var Router = Events.extend({
 
         the[_initPopStateEvent]();
         the[_initPushStateEvent]();
+        the[_notFoundMatcher] = the[_notFoundMatcher] || the[_getUndefinedMatcher]();
         the[_parseState](history.state || the[_getNextState]());
 
         return the;
@@ -261,7 +262,7 @@ var Router = Events.extend({
 
         /* istanbul ignore next */
         if (the[_notFoundMatcher]) {
-            throw new TypeError('`otherwise`只允许调用一次');
+            throw new SyntaxError('`Router#otherwise`只允许调用一次');
         }
 
         var async = true;
@@ -382,6 +383,7 @@ var Router = Events.extend({
 var _options = Router.sole();
 var _matchList = Router.sole();
 var _notFoundMatcher = Router.sole();
+var _getUndefinedMatcher = Router.sole();
 var _initPopStateEvent = Router.sole();
 var _initPushStateEvent = Router.sole();
 var _getNextState = Router.sole();
@@ -532,6 +534,24 @@ pro[_initPushStateEvent] = function () {
             return false;
         }
     });
+};
+
+
+/**
+ * 获取未定义的 matcher
+ * @returns {{}}
+ */
+pro[_getUndefinedMatcher] = function () {
+    return {
+        done: true,
+        id: routeId++,
+        controller: null,
+        rule: null,
+        type: null,
+        async: true,
+        pipe: false,
+        fn: null
+    };
 };
 
 

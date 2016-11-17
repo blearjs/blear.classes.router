@@ -228,7 +228,7 @@ describe('测试文件', function () {
                     delay(next);
                 })
                 .task(function (next) {
-                    expect(matchTimes).toEqual(0);
+                    expect(matchTimes).toEqual(3);
                     expect(changeTimes).toEqual(3);
                     expect(routeList.length).toEqual(3);
                     expect(routeList[0].controller).toEqual(null);
@@ -281,7 +281,7 @@ describe('测试文件', function () {
                     delay(next);
                 })
                 .task(function (next) {
-                    expect(matchTimes).toEqual(2);
+                    expect(matchTimes).toEqual(3);
                     expect(routeList.length).toEqual(3);
                     expect(routeList[0].controller).toEqual(null);
                     expect(routeList[1].controller).toEqual('a');
@@ -324,7 +324,7 @@ describe('测试文件', function () {
                     delay(next);
                 })
                 .task(function (next) {
-                    expect(matchTimes).toEqual(0);
+                    expect(matchTimes).toEqual(1);
                     expect(routeList.length).toEqual(3);
                     expect(routeList[0].controller).toEqual(null);
                     expect(routeList[1].controller).toEqual(null);
