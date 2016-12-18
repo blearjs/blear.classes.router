@@ -606,19 +606,6 @@ pro[_executeRoute] = function (route, matcher) {
     // 先进入历史
     route.controller = matcher && matcher.controller;
     route.done = matcher && matcher.done;
-
-    if (the[_lastRoute]) {
-        // 防止循环引用链过长导致内存泄露
-        the[_lastRoute].prev = null;
-        the[_lastRoute].next = route;
-        // 数据传递
-        route.data = the[_lastRoute].nextData;
-        the[_lastRoute].nextData = null;
-    }
-
-    // route.prev = the[_lastRoute];
-    // // 防止循环引用链过长导致内存泄露
-    // route.next = null;
     the[_pushHistory](route);
 
     /**
