@@ -161,6 +161,8 @@ var Router = Events.extend({
         the[_lastRuler] = null;
         // 是否正在处理中
         the[_processing] = false;
+        // 是否已启动
+        the[_started] = false;
         // 历史记录
         the[_historyIndex] = 0;
         the[_current] = -1;
@@ -179,6 +181,7 @@ var Router = Events.extend({
         the[_initPushStateEvent]();
         the[_notFoundMatcher] = the[_notFoundMatcher] || the[_getUndefinedMatcher]();
         the[_parseState](history.state || the[_getNextState]());
+        the[_started] = true;
 
         return the;
     },
@@ -401,6 +404,7 @@ var _current = Router.sole();
 var _pushHistory = Router.sole();
 var _resolvePath = Router.sole();
 var _dropChange = Router.sole();
+var _started = Router.sole();
 var pro = Router.prototype;
 
 
@@ -457,7 +461,10 @@ pro[_parseState] = function (state) {
     var pipeMatcherList = [];
     var pipePath;
 
-    the[_current]++;
+    if (the[_started]) {
+        the[_current]++;
+    }
+
     the[_processing] = true;
 
     array.each(the[_matchList], function (index, matcher) {
@@ -606,6 +613,19 @@ pro[_executeRoute] = function (route, matcher) {
     // 先进入历史
     route.controller = matcher && matcher.controller;
     route.done = matcher && matcher.done;
+
+    if (the[_lastRoute]) {
+        // 防止循环引用链过长导致内存泄露
+        the[_lastRoute].prev = null;
+        the[_lastRoute].next = route;
+        // 数据传递
+        route.data = the[_lastRoute].nextData;
+        the[_lastRoute].nextData = null;
+    }
+
+    // route.prev = the[_lastRoute];
+    // // 防止循环引用链过长导致内存泄露
+    // route.next = null;
     the[_pushHistory](route);
 
     /**
