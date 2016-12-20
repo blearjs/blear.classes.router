@@ -30,9 +30,13 @@ var Events = require('blear.classes.events');
 
 var win = window;
 var doc = win.document;
-var history = win.history;
+var navigatorHistory = win.history;
 var routeId = 0;
+var historyId = 0;
 var MAX_LENGTH = 10;
+var PUSH_SATET = 1;
+var REPLACE_SATET = 2;
+var POPUP_SATET = 3;
 var defaults = {
     /**
      * 监听的元素，只会处理 #! 开始的 url
@@ -65,11 +69,12 @@ var Route = Events.extend({
         var the = this;
 
         Route.parent(the);
-        meta.data = {};
-        meta.nextData = {};
-        meta.state = state;
-        the.router = router;
         object.assign(the, meta);
+        the.data = {};
+        the.nextData = {};
+        the.state = state;
+        the.router = router;
+        the.location = location.href;
 
         var lastRoute = router[_lastRoute];
 
@@ -112,28 +117,6 @@ var Route = Events.extend({
         return the;
     }
 });
-var _rewrite = Route.sole();
-
-
-/**
- * 重写并生成一个新的 route
- * @param meta
- */
-Route.prototype[_rewrite] = function (meta) {
-    var the = this;
-    var router = the.router;
-
-    router[_lastRoute] = the;
-    var newRoute = new Route(router, meta, the.state);
-
-    newRoute.id = the.id;
-    newRoute.view = the.view;
-    newRoute.matched = the.matched;
-    newRoute.data = the.data;
-    newRoute.nextData = the.nextData;
-
-    return newRoute;
-};
 
 
 /**
@@ -180,8 +163,7 @@ var Router = Events.extend({
         the[_initPopStateEvent]();
         the[_initPushStateEvent]();
         the[_notFoundMatcher] = the[_notFoundMatcher] || the[_getUndefinedMatcher]();
-        the[_parseState](history.state || the[_getNextState]());
-        the[_started] = true;
+        the[_parseState](PUSH_SATET);
 
         return the;
     },
@@ -300,7 +282,7 @@ var Router = Events.extend({
 
         time.nextTick(function () {
             var toRet = the[_resolvePath](to);
-            the[_pushState](toRet.path);
+            the[_pushURL](toRet.path);
         });
 
         return the;
@@ -320,9 +302,7 @@ var Router = Events.extend({
             var currentRoute = the.history[current];
             var resolveRet = the[_resolvePath](to);
 
-            the[_replaceState](resolveRet.path);
-            currentRoute = the.history[current] = currentRoute[_rewrite](hashbang.parse());
-            the.emit('rewriteHistory', currentRoute);
+            the[_replaceURL](resolveRet.path);
         });
 
         return the;
@@ -343,9 +323,7 @@ var Router = Events.extend({
             var currentRoute = the.history[current];
             var url = hashbang.setQuery(key, val, the[_options].split);
 
-            the[_replaceState](url);
-            currentRoute = the.history[current] = currentRoute[_rewrite](hashbang.parse());
-            the.emit('rewriteHistory', currentRoute);
+            the[_replaceURL](url);
         });
 
         return the;
@@ -391,8 +369,8 @@ var _initPopStateEvent = Router.sole();
 var _initPushStateEvent = Router.sole();
 var _getNextState = Router.sole();
 var _onPopState = Router.sole();
-var _pushState = Router.sole();
-var _replaceState = Router.sole();
+var _pushURL = Router.sole();
+var _replaceURL = Router.sole();
 var _parseState = Router.sole();
 var _lastRoute = Router.sole();
 var _lastMatches = Router.sole();
@@ -401,7 +379,6 @@ var _executeRoute = Router.sole();
 var _processing = Router.sole();
 var _historyIndex = Router.sole();
 var _current = Router.sole();
-var _pushHistory = Router.sole();
 var _resolvePath = Router.sole();
 var _dropChange = Router.sole();
 var _started = Router.sole();
@@ -410,10 +387,11 @@ var pro = Router.prototype;
 
 /**
  * 获取下一个 state
- * @returns {{timeStamp: number}}
+ * @returns {{id: number, timeStamp: number}}
  */
 pro[_getNextState] = function () {
     return {
+        id: historyId++,
         timeStamp: date.now()
     };
 };
@@ -427,7 +405,7 @@ pro[_initPopStateEvent] = function () {
 
     // init event
     the[_onPopState] = function (ev) {
-        the[_parseState](ev && ev.state || the[_getNextState]());
+        the[_parseState](POPUP_SATET);
     };
 
     // 这里使用 popstate 是因为 popstate 在 hashchange 之前，
@@ -439,9 +417,9 @@ pro[_initPopStateEvent] = function () {
 
 /**
  * 解析当前状态
- * @param state
+ * @param stateType
  */
-pro[_parseState] = function (state) {
+pro[_parseState] = function (stateType) {
     var the = this;
 
     if (the[_processing]) {
@@ -449,11 +427,12 @@ pro[_parseState] = function (state) {
         return;
     }
 
+    var now = date.now();
+    var state = navigatorHistory.state || the[_getNextState]();
     var options = the[_options];
     var foundMatcher = null;
     var meta = hashbang.parse();
     var path = meta.path;
-    state.timeStamp = state.timeStamp || date.now();
     var startMatches = null;
     var startRoute = new Route(the, meta, state);
     var endRoute = startRoute;
@@ -461,12 +440,7 @@ pro[_parseState] = function (state) {
     var pipeMatcherList = [];
     var pipePath;
 
-    if (the[_started]) {
-        the[_current]++;
-    }
-
     the[_processing] = true;
-
     array.each(the[_matchList], function (index, matcher) {
         switch (matcher.type) {
             case 'string':
@@ -499,14 +473,47 @@ pro[_parseState] = function (state) {
         if (pipePath) {
             the[_processing] = false;
             the[_lastRoute] = startRoute.prev;
-            the[_replaceState](startRoute.resolve(pipePath));
+            the[_replaceURL](startRoute.resolve(pipePath));
             return;
         }
 
+        var history = the.history;
+
+        switch (stateType) {
+            case PUSH_SATET:
+                the[_current]++;
+                history.splice(the[_current], history.length - 1);
+                history.push(startRoute);
+                break;
+
+            case REPLACE_SATET:
+                var currentRoute = history[the[_current]];
+
+                if (currentRoute) {
+                    history[the[_current]] = startRoute;
+                }
+                // 初次进入的一些路径 replace
+                // 比如首次进入首页，但是权限不足，改为进入列表页
+                else {
+                    the[_current]++;
+                    history.push(startRoute);
+                }
+                break;
+
+            case POPUP_SATET:
+                var lastRoute = the[_lastRoute];
+                var isNext = lastRoute.state.id < state.id;
+                the[_current] += isNext ? 1 : -1;
+                break;
+        }
+
+        // 重写 state
+        navigatorHistory.replaceState(state, '', location.href);
         the[_executeRoute](startRoute, foundMatcher);
     };
 
     howdo.each(pipeMatcherList, function (index, matcher, next) {
+        // 只做过渡使用，仅有 resolve 方法，无实际用途
         var route = endRoute = new Route(the, meta, state, true);
         var matches = matchesList[index];
 
@@ -537,7 +544,7 @@ pro[_initPushStateEvent] = function () {
         var href = attribute.attr(el, 'href');
 
         if (utilHashbang.is(href, options.split)) {
-            the[_pushState](href);
+            the[_pushURL](href);
             return false;
         }
     });
@@ -563,10 +570,10 @@ pro[_getUndefinedMatcher] = function () {
 
 
 /**
- * 新增状态
+ * 新增 URL
  * @param _url
  */
-pro[_pushState] = function (_url) {
+pro[_pushURL] = function (_url) {
     var the = this;
 
     if (the[_processing]) {
@@ -580,25 +587,20 @@ pro[_pushState] = function (_url) {
         return;
     }
 
-    var state = the[_getNextState]();
-
-    history.pushState(state, '', _url);
-    the[_parseState](state);
+    navigatorHistory.pushState(null, '', _url);
+    the[_parseState](PUSH_SATET);
 };
 
 
 /**
- * 替换当前状态
+ * 替换当前 URL
  * @param url
  */
-pro[_replaceState] = function (url) {
+pro[_replaceURL] = function (url) {
     var the = this;
-    var current = the[_current];
-    var currentRoute = the.history[current];
-    var state = currentRoute ? currentRoute.state : null;
 
-    history.replaceState(state, '', url);
-    the[_onPopState](currentRoute);
+    navigatorHistory.replaceState(null, '', url);
+    the[_parseState](REPLACE_SATET);
 };
 
 
@@ -610,23 +612,8 @@ pro[_replaceState] = function (url) {
 pro[_executeRoute] = function (route, matcher) {
     var the = this;
 
-    // 先进入历史
     route.controller = matcher && matcher.controller;
     route.done = matcher && matcher.done;
-
-    if (the[_lastRoute]) {
-        // 防止循环引用链过长导致内存泄露
-        the[_lastRoute].prev = null;
-        the[_lastRoute].next = route;
-        // 数据传递
-        route.data = the[_lastRoute].nextData;
-        the[_lastRoute].nextData = null;
-    }
-
-    // route.prev = the[_lastRoute];
-    // // 防止循环引用链过长导致内存泄露
-    // route.next = null;
-    the[_pushHistory](route);
 
     /**
      * load 之后执行
@@ -667,26 +654,6 @@ pro[_executeRoute] = function (route, matcher) {
     }
 };
 
-
-/**
- * 加入历史栈
- * @param route
- */
-pro[_pushHistory] = function (route) {
-    var the = this;
-
-    route.index = the[_historyIndex]++;
-    the.history.push(route);
-
-    if (the.history.length > MAX_LENGTH) {
-        the.emit('dropHistory', the.history.shift());
-        the[_current]--;
-    }
-
-    the.emit('pushHistory', route);
-};
-
-
 /**
  * 解决路径
  * @param to {String|Number}
@@ -706,17 +673,9 @@ pro[_resolvePath] = function (to) {
  */
 pro[_dropChange] = function () {
     var the = this;
-    the[_current]--;
-    var current = the[_current];
-    var currentRoute = the.history[current];
+    var currentRoute = the.history[the[_current]];
 
-    if (!currentRoute) {
-        return;
-    }
-
-    the.history.splice(current + 1);
-    the.emit('dropChange', hashbang.get());
-    the[_replaceState](hashbang.set(currentRoute.path, the[_options].split));
+    navigatorHistory.replaceState(currentRoute.state, '', currentRoute.location);
 };
 
 
