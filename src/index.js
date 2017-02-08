@@ -640,6 +640,7 @@ pro[_executeRoute] = function (route, matcher) {
             the.emit('afterChange', route, changed);
 
             if (!changed && the[_current] > 0) {
+                the[_current]--;
                 the[_dropChange]();
             } else {
                 the[_lastRoute] = route;
