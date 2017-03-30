@@ -676,6 +676,10 @@ pro[_dropChange] = function () {
     var the = this;
     var currentRoute = the.history[the[_current]];
 
+    if (!currentRoute) {
+        return;
+    }
+
     navigatorHistory.replaceState(currentRoute.state, '', currentRoute.location);
 };
 
