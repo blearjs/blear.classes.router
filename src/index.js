@@ -3,6 +3,8 @@
  * 路由系统，可以精细控制每个路由的进入和离开
  * 兼容：history API，ie11（含）+
  * @see http://caniuse.com/#search=pushstate
+ * @todo 参考 vue-router 抽象出路由对象，然后根据不同的 mode 来扩展
+ * @todo https://router.vuejs.org/zh-cn/
  *
  * @ref https://github.com/sdc-alibaba/SUI-Mobile/blob/dev/js/router.js
  *
