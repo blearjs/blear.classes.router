@@ -359,7 +359,7 @@ var Router = Events.extend({
     destroy: function () {
         var the = this;
 
-        event.un(win, 'hashchange', the[_onPopState]);
+        event.un(win, 'popstate', the[_onPopState]);
         Route.superInvoke('destroy', the);
     }
 });
