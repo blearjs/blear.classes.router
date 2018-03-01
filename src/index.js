@@ -23,7 +23,7 @@ var time = require('blear.utils.time');
 var number = require('blear.utils.number');
 var path = require('blear.utils.path');
 var date = require('blear.utils.date');
-var howdo = require('blear.utils.howdo');
+var plan = require('blear.utils.plan');
 var utilHashbang = require('blear.utils.hashbang');
 var event = require('blear.core.event');
 var attribute = require('blear.core.attribute');
@@ -514,7 +514,7 @@ pro[_parseState] = function (stateType) {
         the[_executeRoute](startRoute, foundMatcher);
     };
 
-    howdo.each(pipeMatcherList, function (index, matcher, next) {
+    plan.each(pipeMatcherList, function (index, matcher, next) {
         // 只做过渡使用，仅有 resolve 方法，无实际用途
         var route = endRoute = new Route(the, meta, state, true);
         var matches = matchesList[index];
@@ -526,7 +526,7 @@ pro[_parseState] = function (stateType) {
             pipePath = path || pipePath;
             next();
         });
-    }).follow(excuteFoundMatcher);
+    }).serial(excuteFoundMatcher);
 
     startRoute.id = foundMatcher && foundMatcher.id;
     startRoute.rule = foundMatcher && foundMatcher.rule;
