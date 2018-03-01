@@ -8,7 +8,7 @@
 'use strict';
 
 var Router = require('../src/index.js');
-var howdo = require('blear.utils.howdo');
+var plan = require('blear.utils.plan');
 
 
 describe('测试文件', function () {
@@ -17,7 +17,7 @@ describe('测试文件', function () {
     };
 
     it('water test', function (done) {
-        var water = howdo.task(function (next) {
+        var water = plan.task(function (next) {
             next();
         });
         var pipe = function (id, task) {
@@ -31,7 +31,7 @@ describe('测试文件', function () {
             });
         };
 
-        pipe('#_change', function (done) {
+        pipe('event', function (done) {
             var beforeTimes = 0;
             var afterTimes = 0;
             var router = new Router();
@@ -46,7 +46,7 @@ describe('测试文件', function () {
 
             router.start();
 
-            howdo
+            plan
                 .task(function (next) {
                     location.hash = '#/a';
                     delay(next);
@@ -65,7 +65,7 @@ describe('测试文件', function () {
                     expect(location.hash).toEqual('#/b');
                     delay(next);
                 })
-                .follow(done);
+                .serial(done);
         });
         
         pipe('#redirect', function (done) {
@@ -75,10 +75,10 @@ describe('测试文件', function () {
             router.on('beforeChange', function () {
                 changeTimes++;
             });
-        
+
             router.start();
-        
-            howdo
+
+            plan
                 .task(function (next) {
                     router.redirect('/a');
                     delay(next);
@@ -92,7 +92,7 @@ describe('测试文件', function () {
                     expect(location.hash).toEqual('#/a');
                     delay(next);
                 })
-                .follow(done);
+                .serial(done);
         });
 
         pipe('#rewrite', function (done) {
@@ -102,10 +102,10 @@ describe('测试文件', function () {
             router.on('beforeChange', function () {
                 changeTimes++;
             });
-        
+
             router.start();
-        
-            howdo
+
+            plan
                 .task(function (next) {
                     router.rewrite('/a');
                     delay(next);
@@ -119,7 +119,7 @@ describe('测试文件', function () {
                     expect(location.hash).toEqual('#/a');
                     delay(next);
                 })
-                .follow(done);
+                .serial(done);
         });
 
         pipe('#rewriteQuery', function (done) {
@@ -132,7 +132,7 @@ describe('测试文件', function () {
 
             router.start();
 
-            howdo
+            plan
                 .task(function (next) {
                     router.rewriteQuery({a: 1});
                     delay(next);
@@ -157,7 +157,7 @@ describe('测试文件', function () {
                     expect(location.hash).toEqual('#/?a=3');
                     delay(next);
                 })
-                .follow(done);
+                .serial(done);
         });
 
         pipe('#resolve', function (done) {
@@ -170,7 +170,7 @@ describe('测试文件', function () {
 
             router.start();
 
-            howdo
+            plan
                 .task(function (next) {
                     var ret = router.resolve('/a/b/c');
                     expect(ret).toMatch('#/a/b/c');
@@ -179,21 +179,21 @@ describe('测试文件', function () {
                 })
                 .task(function (next) {
                     var ret = router.resolve('..');
-                    expect(ret).toMatch('#/a/');
+                    expect(ret).toMatch(/#\/a/);
                     location.href = ret;
                     delay(next);
                 })
                 .task(function (next) {
-                    expect(location.hash).toEqual('#/a/');
+                    expect(location.hash).toEqual('#/a');
                     router.destroy();
                     delay(next);
                 })
                 .task(function (next) {
                     expect(changeTimes).toEqual(3);
-                    expect(location.hash).toEqual('#/a/');
+                    expect(location.hash).toEqual('#/a');
                     delay(next);
                 })
-                .follow(done);
+                .serial(done);
         });
 
         pipe('#match(fn) 无具名路由匹配', function (done) {
@@ -214,7 +214,7 @@ describe('测试文件', function () {
 
             router.start();
 
-            howdo
+            plan
                 .task(function (next) {
                     location.hash = '#/a';
                     delay(next);
@@ -236,7 +236,7 @@ describe('测试文件', function () {
                     expect(routeList[2].controller).toEqual(null);
                     delay(next);
                 })
-                .follow(done);
+                .serial(done);
         });
 
         pipe('#match(fn) 有具名路由匹配', function (done) {
@@ -267,7 +267,7 @@ describe('测试文件', function () {
 
             router.start();
 
-            howdo
+            plan
                 .task(function (next) {
                     location.hash = '#/a';
                     delay(next);
@@ -289,7 +289,7 @@ describe('测试文件', function () {
                     expect(changeTimes).toEqual(3);
                     delay(next);
                 })
-                .follow(done);
+                .serial(done);
         });
 
         pipe('#match(rule, fn) 无具名路由', function (done) {
@@ -310,7 +310,7 @@ describe('测试文件', function () {
 
             router.start();
 
-            howdo
+            plan
                 .task(function (next) {
                     location.hash = '#/a';
                     delay(next);
@@ -332,7 +332,7 @@ describe('测试文件', function () {
                     expect(changeTimes).toEqual(3);
                     delay(next);
                 })
-                .follow(done);
+                .serial(done);
         });
 
         pipe('#match(rule, fn) 有具名路由匹配', function (done) {
@@ -363,7 +363,7 @@ describe('测试文件', function () {
 
             router.start();
 
-            howdo
+            plan
                 .task(function (next) {
                     location.hash = '#/a';
                     delay(next);
@@ -382,7 +382,7 @@ describe('测试文件', function () {
                     router.destroy();
                     delay(next);
                 })
-                .follow(done);
+                .serial(done);
         });
 
         pipe('#otherwise(fn)', function (done) {
@@ -402,7 +402,7 @@ describe('测试文件', function () {
 
             router.start();
 
-            howdo
+            plan
                 .task(function (next) {
                     location.hash = '#/a';
                     delay(next);
@@ -420,9 +420,9 @@ describe('测试文件', function () {
                     router.destroy();
                     delay(next);
                 })
-                .follow(done);
+                .serial(done);
         });
 
-        water.follow(done);
+        water.serial(done);
     }, 10000000);
 });

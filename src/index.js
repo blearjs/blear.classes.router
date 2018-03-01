@@ -360,7 +360,7 @@ var Router = Events.extend({
         var the = this;
 
         event.un(win, 'popstate', the[_onPopState]);
-        Route.superInvoke('destroy', the);
+        Route.invoke('destroy', the);
     }
 });
 var _options = Router.sole();
