@@ -13,40 +13,26 @@ var Router = require('../src/index');
 var router = new Router();
 
 router
-    .match(function (route, next) {
-        console.log('load all middleware');
+// 匿名路径
+    .match(function (next) {
+        console.log('1 start');
         next();
     })
-    .match(/^\/user\/(.*)$/, function (route, next) {
-        console.log('load user middleware');
-        setTimeout(function () {
-            next();
-        }, 100);
-    })
-    .match(/^\/user\/abc\/([^/]*)$/, function (route, next) {
-        console.log('load user/abc middleware');
-        setTimeout(function () {
-            if (route.params[1] === '123') {
-                return next('./1234');
-            }
+    .match(function (next) {
+        console.log('2');
 
-            next();
-        }, 100);
-    })
-    .match(/^\/user\/def\/.*$/, function (route, next) {
-        console.log('load user/abc middleware');
         setTimeout(function () {
             next();
         }, 100);
     })
-    .match('/user/abc/:userId', function () {
-        return 'user/abc controller';
+    .match(function () {
+        console.log('3 end');
     })
-    .match('/user/def/:ussrId', function (resolve) {
-        setTimeout(function () {
-            resolve('load user/def controller');
-        }, 1000);
+    .match(function () {
+        console.log('永不会执行');
     })
+
+
     .otherwise(function () {
         console.log('load 404');
     });

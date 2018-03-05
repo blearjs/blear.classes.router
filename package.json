@@ -36,9 +36,16 @@
     "url": "https://github.com/blearjs/blear.classes.router/issues"
   },
   "dependencies": {
+    "blear.classes.class": "^1.1.7",
     "blear.classes.events": "^1.0.7",
+    "blear.core.event": "^1.0.5",
+    "blear.core.hashbang": "^1.1.3",
     "blear.utils.access": "^1.0.5",
-    "blear.utils.object": "^1.0.14"
+    "blear.utils.array": "^1.0.12",
+    "blear.utils.object": "^1.0.14",
+    "blear.utils.plan": "^2.2.1",
+    "blear.utils.typeis": "^1.0.3",
+    "blear.utils.url": "^1.0.18"
   },
   "peerDependencies": {},
   "devDependencies": {
