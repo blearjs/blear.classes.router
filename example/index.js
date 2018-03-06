@@ -81,6 +81,7 @@ router
 
     .match('/user/def/ghi', function () {
         console.log(this);
+        debugger;
     })
 
     .otherwise(function () {

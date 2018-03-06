@@ -9,6 +9,7 @@
 'use strict';
 
 var Class = require('blear.classes.class');
+var url = require('blear.utils.url');
 
 var id = 0;
 
@@ -85,6 +86,9 @@ prop[_wrap] = function (item) {
     item.prev = the.list[the.active] || null;
     item.historyId = id++;
     item.timestamp = Date.now();
+    item.resolve = function (b) {
+        return url.resolve(item.href, b);
+    };
     return item;
 };
 

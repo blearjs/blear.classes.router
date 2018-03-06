@@ -173,27 +173,14 @@ prop[_initPopstateEvent] = function () {
         state.timestamp && the[_previousState].timestamp &&
         state.timestamp < the[_previousState].timestamp ? 'backward' : 'forward';
 
-        switch (stateType) {
-            // 浏览器主动：需要判断方向
-            case STATE_TYPE_IS_POP:
-                the[_historyManger][direction](route);
-                break;
-
-            // 用户主动：新增历史
-            case STATE_TYPE_IS_PUSH:
-                the[_historyManger].forward(route);
-                break;
-
-            // 用户主动：替换历史
-            case STATE_TYPE_IS_REPLACE:
-                direction = 'replace';
-                the[_historyManger].replace(route);
-                break;
+        if (stateType === STATE_TYPE_IS_REPLACE) {
+            direction = 'replace';
         }
 
         route.direction = direction;
         route.state = state;
-        nativeHistory.replaceState(the[_previousState] = state, null, location.href);
+        nativeHistory.replaceState(the[_previousState] = state, null, route.location = location.href);
+        the[_historyManger][direction](route);
         plan.each(the[_namedDirectorList], function (index, director, next) {
             var directorPath = director.path;
             var matched = false;
@@ -217,7 +204,7 @@ prop[_initPopstateEvent] = function () {
                         break;
                 }
 
-                if(matched) {
+                if (matched) {
                     matchedNamedDirectorList.push(director);
                 }
             }
