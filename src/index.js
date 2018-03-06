@@ -95,24 +95,56 @@ var Router = Events.extend({
         return the;
     },
 
-    // resolve: function (b) {
-    //     var the = this;
-    //     var options = the[_options];
-    //
-    //
-    // },
-    //
-    // redirect: function () {
-    //
-    // },
-    //
-    // rewrite: function () {
-    //
-    // },
-    //
-    // rewriteQuery: function () {
-    //
-    // },
+    /**
+     * 解决新路径
+     * @param to
+     * @returns {String}
+     */
+    resolve: function (to) {
+        var the = this;
+        var options = the[_options];
+
+        return hashbang.set(url.resolve(hashbang.get(), to), options.split);
+    },
+
+    /**
+     * 跳转到新地址
+     * @param to
+     * @returns {Router}
+     */
+    redirect: function (to) {
+        var the = this;
+        var options = the[_options];
+
+        location.href = hashbang.set(url.resolve(hashbang.get(), to), options.split);
+        return the;
+    },
+
+    /**
+     * 重写为新地址
+     * @param to
+     * @returns {Router}
+     */
+    rewrite: function (to) {
+        var the = this;
+        var options = the[_options];
+
+        location.replace(hashbang.set(url.resolve(hashbang.get(), to), options.split));
+        return the;
+    },
+
+    /**
+     * 重写 query
+     * @param key
+     * @param val
+     * @returns {string}
+     */
+    rewriteQuery: function (key, val) {
+        var the = this;
+        var options = the[_options];
+
+        return location.href = hashbang.setQuery(key, val, options.split);
+    },
 
     /**
      * 路由开始
@@ -179,6 +211,12 @@ prop[_initPopstateEvent] = function () {
 
         route.direction = direction;
         route.state = state;
+        route.resolve = function (to) {
+            return url.resolve(route.href, to);
+        };
+        route.resolveQuery = function (key, val) {
+            return url.setQuery(route.href, key, val);
+        };
         nativeHistory.replaceState(the[_previousState] = state, null, route.location = location.href);
         the[_historyManger][direction](route);
         plan.each(the[_namedDirectorList], function (index, director, next) {

@@ -81,7 +81,10 @@ router
 
     .match('/user/def/ghi', function () {
         console.log(this);
-        debugger;
+        console.log(this.resolve('../../aaa'));
+        console.log(this.resolveQuery('a', 1));
+        console.log(this.resolveQuery('a', [1, 2, 3]));
+        console.log(this.resolveQuery({a: 1, b: 2, c: [3, 4]}));
     })
 
     .otherwise(function () {
