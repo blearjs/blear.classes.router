@@ -25,7 +25,7 @@ var History = Class.extend({
     /**
      * 前进
      * @param item
-     * @returns {History}
+     * @returns {*}
      */
     forward: function (item) {
         var the = this;
@@ -35,10 +35,10 @@ var History = Class.extend({
             the.list.splice(the.active, the.length - the.active - 1);
         }
 
-        the.list.push(wrap(item));
+        the.list.push(the[_wrap](item));
         the.active++;
         the.length++;
-        return the;
+        return item;
     },
 
     /**
@@ -47,7 +47,10 @@ var History = Class.extend({
      */
     backward: function () {
         var the = this;
-        return the.list[--the.active];
+        var prev = the.list[the.active];
+        var item = the.list[--the.active];
+        item.prev = prev;
+        return item;
     },
 
     /**
@@ -56,16 +59,8 @@ var History = Class.extend({
      */
     replace: function (item) {
         var the = this;
-        the.list[the.active] = wrap(item);
-    },
-
-    /**
-     * 根据索引值获取项目
-     * @param index
-     * @returns {*}
-     */
-    getItem: function (index) {
-        return this.list[index];
+        the.list[the.active] = the[_wrap](item);
+        return item;
     },
 
     /**
@@ -76,20 +71,25 @@ var History = Class.extend({
     }
 });
 
-
-module.exports = History;
-
-// =========================
+var prop = History.prototype;
+var sole = History.sole;
+var _wrap = sole();
 
 /**
  * 包装
  * @param item
  * @returns {*}
  */
-function wrap(item) {
-    var timeStamp = Date.now();
+prop[_wrap] = function (item) {
+    var the = this;
+    item.prev = the.list[the.active] || null;
     item.historyId = id++;
-    item.timeStamp = item.timestamp = timeStamp;
+    item.timestamp = Date.now();
     return item;
-}
+};
+
+
+module.exports = History;
+
+// =========================
 
