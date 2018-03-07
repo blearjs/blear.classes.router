@@ -375,8 +375,10 @@ module.exports = Router;
  * @returns {{timestamp: number}}
  */
 function nextState() {
+    var id = Date.now();
     return {
-        timestamp: Date.now()
+        id: id,
+        timestamp: id
     };
 }
 
