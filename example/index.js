@@ -89,9 +89,6 @@ router
 
         console.log(route);
         console.log(route.resolve('../../aaa'));
-        console.log(route.resolveQuery('a', 1));
-        console.log(route.resolveQuery('a', [1, 2, 3]));
-        console.log(route.resolveQuery({a: 1, b: 2, c: [3, 4]}));
 
         route.redirect('a');
     })
