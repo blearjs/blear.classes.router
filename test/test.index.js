@@ -16,7 +16,7 @@ describe('测试文件', function () {
         setTimeout(next, 100);
     };
 
-    it('water test', function (done) {
+    it('顺序测试', function (done) {
         var water = plan.task(function (next) {
             next();
         });
@@ -371,7 +371,7 @@ describe('测试文件', function () {
                     route1 = this;
                     setTimeout(function () {
                         next(objA);
-                    }, 100);
+                    }, 10);
                 });
 
             router.start();
@@ -701,6 +701,36 @@ describe('测试文件', function () {
                 .task(function (next) {
                     expect(beforeChangeTimes).toBe(1);
                     expect(afterChangeTimes).toBe(0);
+                    delay(next);
+                })
+                .serial(done);
+        });
+
+        pipe('模式：path', function (done) {
+            var router = new Router({
+                mode: 'path'
+            });
+            var matched = false;
+            var origin = location.href;
+
+            router
+                .match('/', function (next) {
+                    next('/abc');
+                })
+                .match('/abc', function () {
+                    matched = true;
+                });
+
+            plan
+                .task(function (next) {
+                    history.replaceState(null, null, '/');
+                    router.start();
+                    delay(next);
+                })
+                .task(function (next) {
+                    expect(location.pathname).toBe('/abc');
+                    router.destroy();
+                    history.replaceState(null, null, origin);
                     delay(next);
                 })
                 .serial(done);

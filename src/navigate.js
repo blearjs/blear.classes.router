@@ -9,10 +9,13 @@
 'use strict';
 
 var hashbang = require('blear.core.hashbang');
+var event = require('blear.core.event');
+var time = require('blear.utils.time');
 var url = require('blear.utils.url');
 
 var MODE_OF_HASH = 'hash';
 var MODE_OF_PATH = 'path';
+var nextTick = time.nextTick;
 
 module.exports = function (mode, split) {
     var isHashMode = mode === MODE_OF_HASH;
@@ -84,14 +87,49 @@ module.exports = function (mode, split) {
 };
 
 
+// ==================================================
+
+/**
+ * 获取当前 url
+ * @returns {string}
+ */
+function getUrl() {
+    return location.href;
+}
+
+/**
+ * 跳转 url
+ * @param to
+ * @returns {*}
+ */
 function redirect(to) {
-    location.href = to;
+    nextTick(function () {
+        // location.href = to;
+        history.pushState(null, null, to);
+        emit();
+    });
     return to;
 }
 
+/**
+ * 重写 url
+ * @param to
+ * @returns {*}
+ */
 function rewrite(to) {
-    location.replace(to);
+    nextTick(function () {
+        // location.replace(to);
+        history.replaceState(history.state, null, to);
+        emit();
+    });
     return to;
+}
+
+/**
+ * 触发 popstate 事件
+ */
+function emit() {
+    event.emit(window, 'popstate');
 }
 
 

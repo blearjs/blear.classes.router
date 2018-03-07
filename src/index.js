@@ -240,11 +240,12 @@ prop[_initPopstateEvent] = function () {
         var direction = state && previousState &&
         state.timestamp && previousState.timestamp &&
         state.timestamp < previousState.timestamp ? 'backward' : 'forward';
-        var loc = getUrl();
 
-        if (stateType === STATE_TYPE_IS_REPLACE) {
+        if (previousRoute && previousRoute.pathname === pathname) {
             direction = 'replace';
         }
+
+        var loc = location.href;
 
         route.assign({
             direction: direction,
@@ -305,10 +306,8 @@ prop[_initPopstateEvent] = function () {
                 switch (typeis(toOrController)) {
                     // 终点：替换当前 hashbang
                     case 'string':
-                        toOrController = hashbang.set(url.resolve(pathname, toOrController), options.split);
-                        nativeHistory.replaceState(state, null, toOrController);
+                        the[_navigator].rewrite(toOrController);
                         next(true);
-                        the[_parseStateByStateType](STATE_TYPE_IS_REPLACE);
                         break;
 
                     case 'undefined':
@@ -361,14 +360,6 @@ Router.defaults = defaults;
 module.exports = Router;
 
 // ==================================================================
-/**
- * 获取当前 url
- * @returns {string}
- */
-function getUrl() {
-    return location.href;
-}
-
 /**
  * 下一个 state
  * @returns {{timestamp: number}}

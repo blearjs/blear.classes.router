@@ -50,10 +50,7 @@ var Route = Class.extend({
      * @param to
      */
     redirect: function (to) {
-        var the = this;
-        nextTick(function () {
-            the[_navigator].redirect(to);
-        });
+        return this[_navigator].redirect(to);
     },
 
     /**
@@ -61,10 +58,7 @@ var Route = Class.extend({
      * @param to
      */
     rewrite: function (to) {
-        var the = this;
-        nextTick(function () {
-            the[_navigator].rewrite(to);
-        });
+        return this[_navigator].rewrite(to);
     },
 
     /**
@@ -73,10 +67,7 @@ var Route = Class.extend({
      * @param val
      */
     setQuery: function (key, val) {
-        var the = this;
-        nextTick(function () {
-            the[_navigator].setQuery(key, val);
-        });
+        return this[_navigator].setQuery(key, val);
     },
 
     /**
@@ -84,10 +75,7 @@ var Route = Class.extend({
      * @param key
      */
     removeQuery: function (key) {
-        var the = this;
-        nextTick(function () {
-            the[_navigator].removeQuery(key);
-        });
+        return this[_navigator].removeQuery(key);
     },
 
     /**
