@@ -644,6 +644,68 @@ describe('测试文件', function () {
                 }).serial(done);
         });
 
+        pipe('边界：匿名路由销毁之后才完成控制器加载', function (done) {
+            var router = new Router();
+            var beforeChangeTimes = 0;
+            var afterChangeTimes = 0;
+
+            router.on('beforeChange', function () {
+                beforeChangeTimes++;
+            });
+
+            router.on('afterChange', function () {
+                afterChangeTimes++;
+            });
+
+            router.match(function (next) {
+                setTimeout(function () {
+                    next();
+                }, 10000);
+            });
+
+            router.start();
+            router.destroy();
+
+            plan
+                .task(function (next) {
+                    expect(beforeChangeTimes).toBe(1);
+                    expect(afterChangeTimes).toBe(0);
+                    delay(next);
+                })
+                .serial(done);
+        });
+
+        pipe('边界：具名路由销毁之后才完成控制器加载', function (done) {
+            var router = new Router();
+            var beforeChangeTimes = 0;
+            var afterChangeTimes = 0;
+
+            router.on('beforeChange', function () {
+                beforeChangeTimes++;
+            });
+
+            router.on('afterChange', function () {
+                afterChangeTimes++;
+            });
+
+            router.match('/', function (next) {
+                setTimeout(function () {
+                    next();
+                }, 10000);
+            });
+
+            router.start();
+            router.destroy();
+
+            plan
+                .task(function (next) {
+                    expect(beforeChangeTimes).toBe(1);
+                    expect(afterChangeTimes).toBe(0);
+                    delay(next);
+                })
+                .serial(done);
+        });
+
         water.serial(done);
     }, 10000000);
 });

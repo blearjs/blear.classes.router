@@ -337,6 +337,11 @@ prop[_initPopstateEvent] = function () {
                 }
             });
         }).serial(function () {
+            // 如果此时路由监听已销毁，则不做任何后续处理
+            if (the[_destroyed]) {
+                return;
+            }
+
             var end = function () {
                 the.emit('afterChange', route);
                 the[_parsingState] = false;
