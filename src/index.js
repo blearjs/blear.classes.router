@@ -1,8 +1,10 @@
 /**
  * 路由
  * @author ydr.me
- * @create 2018-03-05 10:19
+ * @create 2016-05-19 18:18
  * @update 2018-03-05 10:19
+ * @update 2018-03-05 10:19
+ * @update 2018年03月07日15:55:10
  */
 
 
@@ -20,12 +22,15 @@ var hashbang = require('blear.core.hashbang');
 var event = require('blear.core.event');
 
 var Route = require('./route');
+var navigate = require('./navigate');
 
 var win = window;
 var nativeHistory = win.history;
 var STATE_TYPE_IS_PUSH = 0;
 var STATE_TYPE_IS_REPLACE = 1;
 var STATE_TYPE_IS_POP = 2;
+var MODE_OF_HASH = 'hash';
+var MODE_OF_PATH = 'path';
 var defaults = {
     /**
      * 是否忽略大小写，默认 false
@@ -43,7 +48,13 @@ var defaults = {
      * hashbang 分隔符
      * @type String
      */
-    split: ''
+    split: '',
+
+    /**
+     * 路由模式，取值：hash、path
+     * @type string
+     */
+    mode: MODE_OF_HASH
 };
 var Router = Events.extend({
     className: 'Router',
@@ -56,8 +67,8 @@ var Router = Events.extend({
         the[_anonymousDirector] = the[_previousRoute] = null;
         // 是否正在解析状态，如果此时有新路由进入，则放弃该路由
         the[_parsingState] = the[_destroyed] = false;
+        the[_navigator] = navigate(the[_options].mode, the[_options].split);
     },
-
 
     /**
      * 路由匹配
@@ -103,61 +114,44 @@ var Router = Events.extend({
      * @returns {String}
      */
     resolve: function (to) {
-        var the = this;
-        var options = the[_options];
-
-        return hashbang.set(url.resolve(hashbang.get(), to), options.split);
+        return this[_navigator].resolve(to);
     },
 
     /**
      * 跳转到新地址
      * @param to
-     * @returns {Router}
+     * @returns {String}
      */
     redirect: function (to) {
-        var the = this;
-        var options = the[_options];
-
-        location.href = hashbang.set(url.resolve(hashbang.get(), to), options.split);
-        return the;
+        return this[_navigator].redirect(to);
     },
 
     /**
      * 重写为新地址
      * @param to
-     * @returns {Router}
+     * @returns {String}
      */
     rewrite: function (to) {
-        var the = this;
-        var options = the[_options];
-
-        location.replace(hashbang.set(url.resolve(hashbang.get(), to), options.split));
-        return the;
+        return this[_navigator].rewrite(to);
     },
 
     /**
      * 设置 query
      * @param key
      * @param [val]
-     * @returns {undefined}
+     * @returns {String}
      */
     setQuery: function (key, val) {
-        var the = this;
-        var options = the[_options];
-
-        location.replace(hashbang.setQuery(key, val, options.split));
+        return this[_navigator].setQuery(key, val);
     },
 
     /**
      * 移除 query
      * @param key
-     * @returns {undefined}
+     * @returns {String}
      */
     removeQuery: function (key) {
-        var the = this;
-        var options = the[_options];
-
-        location.replace(hashbang.removeQuery(key, options.split));
+        return this[_navigator].removeQuery(key);
     },
 
     /**
@@ -202,6 +196,7 @@ var _onWindowPopstate = sole();
 var _parseStateByStateType = sole();
 var _parsingState = sole();
 var _destroyed = sole();
+var _navigator = sole();
 
 prop[_initAnonymousDirector] = function () {
     var the = this;
@@ -225,9 +220,7 @@ prop[_initPopstateEvent] = function () {
             return;
         }
 
-        var route = new Route({
-            split: options.split
-        });
+        var route = new Route(the[_navigator]);
 
         // 如果路由没变化就不做任何处理
         if (isSameRoute(previousRoute, route)) {
@@ -247,7 +240,7 @@ prop[_initPopstateEvent] = function () {
         var direction = state && previousState &&
         state.timestamp && previousState.timestamp &&
         state.timestamp < previousState.timestamp ? 'backward' : 'forward';
-        var location2 = location.href;
+        var loc = getUrl();
 
         if (stateType === STATE_TYPE_IS_REPLACE) {
             direction = 'replace';
@@ -256,10 +249,10 @@ prop[_initPopstateEvent] = function () {
         route.assign({
             direction: direction,
             state: state,
-            location: location2,
+            location: loc,
             controller: null
         });
-        nativeHistory.replaceState(state, null, location2);
+        nativeHistory.replaceState(state, null, loc);
 
         if (the[_previousRoute]) {
             the[_previousRoute].destroy();
@@ -364,11 +357,17 @@ prop[_initPopstateEvent] = function () {
     });
 };
 
-
 Router.defaults = defaults;
 module.exports = Router;
 
 // ==================================================================
+/**
+ * 获取当前 url
+ * @returns {string}
+ */
+function getUrl() {
+    return location.href;
+}
 
 /**
  * 下一个 state
@@ -387,7 +386,6 @@ function nextState() {
 function getState() {
     return nativeHistory.state || nextState();
 }
-
 
 /**
  * 包装控制器
@@ -442,7 +440,6 @@ function isSameRoute(a, b) {
 
     return dumpQuery(a.query) === dumpQuery(b.query);
 }
-
 
 /**
  * 抹平 query

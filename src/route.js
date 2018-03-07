@@ -19,11 +19,11 @@ var routeId = 0;
 
 var Route = Class.extend({
     className: 'Route',
-    constructor: function (options) {
+    constructor: function (navigator) {
         var the = this;
 
         Route.parent(the);
-        the[_split] = options.split;
+        the[_navigator] = navigator;
         the.id = routeId++;
         object.assign(the, hashbang.parse());
     },
@@ -52,7 +52,7 @@ var Route = Class.extend({
     redirect: function (to) {
         var the = this;
         nextTick(function () {
-            location.href = hashbang.set(the.resolve(to), the[_split]);
+            the[_navigator].redirect(to);
         });
     },
 
@@ -63,7 +63,7 @@ var Route = Class.extend({
     rewrite: function (to) {
         var the = this;
         nextTick(function () {
-            location.replace(hashbang.set(the.resolve(to), the[_split]));
+            the[_navigator].rewrite(to);
         });
     },
 
@@ -75,7 +75,7 @@ var Route = Class.extend({
     setQuery: function (key, val) {
         var the = this;
         nextTick(function () {
-            location.replace(hashbang.setQuery(key, val, the[_split]));
+            the[_navigator].setQuery(key, val);
         });
     },
 
@@ -86,7 +86,7 @@ var Route = Class.extend({
     removeQuery: function (key) {
         var the = this;
         nextTick(function () {
-            location.replace(hashbang.removeQuery(key, the[_split]));
+            the[_navigator].removeQuery(key);
         });
     },
 
@@ -98,6 +98,6 @@ var Route = Class.extend({
     }
 });
 var sole = Route.sole;
-var _split = sole();
+var _navigator = sole();
 
 module.exports = Route;
