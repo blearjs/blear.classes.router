@@ -67,7 +67,7 @@ describe('测试文件', function () {
                 })
                 .serial(done);
         });
-        
+
         pipe('#redirect', function (done) {
             var changeTimes = 0;
             var router = new Router();
@@ -122,7 +122,7 @@ describe('测试文件', function () {
                 .serial(done);
         });
 
-        pipe('#rewriteQuery', function (done) {
+        pipe('#setQuery/removeQuery', function (done) {
             var changeTimes = 0;
             var router = new Router();
 
@@ -134,27 +134,32 @@ describe('测试文件', function () {
 
             plan
                 .task(function (next) {
-                    router.rewriteQuery({a: 1});
+                    router.setQuery({a: 1});
                     delay(next);
                 })
                 .task(function (next) {
                     expect(location.hash).toEqual('#/?a=1');
-                    router.rewriteQuery('a', '2');
+                    router.setQuery('a', '2');
                     delay(next);
                 })
                 .task(function (next) {
                     expect(location.hash).toEqual('#/?a=2');
-                    router.rewriteQuery('a=3');
+                    router.setQuery('a=3');
                     delay(next);
                 })
                 .task(function (next) {
                     expect(location.hash).toEqual('#/?a=3');
+                    router.removeQuery('a');
+                    delay(next);
+                })
+                .task(function (next) {
+                    expect(location.hash).toEqual('#/');
                     router.destroy();
                     delay(next);
                 })
                 .task(function (next) {
-                    expect(changeTimes).toEqual(4);
-                    expect(location.hash).toEqual('#/?a=3');
+                    expect(changeTimes).toEqual(5);
+                    expect(location.hash).toEqual('#/');
                     delay(next);
                 })
                 .serial(done);
@@ -196,23 +201,17 @@ describe('测试文件', function () {
                 .serial(done);
         });
 
-        pipe('#match(fn) 无具名路由匹配', function (done) {
-            var changeTimes = 0;
-            var matchTimes = 0;
-            var routeList = [];
+        pipe('无match无otherwise', function (done) {
             var router = new Router();
-
-            router.on('beforeChange', function (route) {
-                changeTimes++;
-                routeList.push(route);
-            });
-
-            router.match(function (route, next) {
-                matchTimes++;
-                next();
-            });
+            var changeTimes = 0;
+            var routeList = [];
 
             router.start();
+
+            router.on('afterChange', function (route) {
+                routeList.push(route);
+                changeTimes++;
+            });
 
             plan
                 .task(function (next) {
@@ -220,48 +219,329 @@ describe('测试文件', function () {
                     delay(next);
                 })
                 .task(function (next) {
-                    location.hash = '#/b';
-                    delay(next);
-                })
-                .task(function (next) {
                     router.destroy();
-                    delay(next);
-                })
-                .task(function (next) {
-                    expect(matchTimes).toEqual(3);
-                    expect(changeTimes).toEqual(3);
-                    expect(routeList.length).toEqual(3);
-                    expect(routeList[0].controller).toEqual(null);
-                    expect(routeList[1].controller).toEqual(null);
-                    expect(routeList[2].controller).toEqual(null);
+                    expect(changeTimes).toBe(2);
+                    expect(routeList.length).toBe(2);
+                    expect(routeList[0].pathname).toBe('/');
+                    expect(routeList[1].pathname).toBe('/a');
                     delay(next);
                 })
                 .serial(done);
         });
 
-        pipe('#match(fn) 有具名路由匹配', function (done) {
-            var changeTimes = 0;
-            var matchTimes = 0;
-            var routeList = [];
+        pipe('#match 匿名路径', function (done) {
+            var router = new Router();
+            var change1Times = 0;
+            var change2Times = 0;
+            var change3Times = 0;
+
+            router
+                .match(function (next) {
+                    change1Times++;
+                    next();
+                })
+                .match(function () {
+                    change2Times++;
+                })
+                .match(function (next) {
+                    change3Times++;
+                    next();
+                });
+
+            router.start();
+
+            plan
+                .task(function (next) {
+                    router.destroy();
+                    expect(change1Times).toBe(1);
+                    expect(change2Times).toBe(1);
+                    expect(change3Times).toBe(0);
+                    delay(next);
+                })
+                .serial(done);
+        });
+
+        pipe('#match 具名路径', function (done) {
+            var router = new Router();
+            var change1Times = 0;
+            var change2Times = 0;
+            var change3Times = 0;
+
+            router
+                .match('/aaa', function (next) {
+                    change1Times++;
+                    next();
+                })
+                .match('/aaa', function () {
+                    change2Times++;
+                })
+                .match('/bbb', function (next) {
+                    change3Times++;
+                    next();
+                });
+
+            router.start();
+
+            plan
+                .task(function (next) {
+                    location.hash = '#/aaa';
+                    delay(next);
+                })
+                .task(function (next) {
+                    router.destroy();
+                    expect(change1Times).toBe(1);
+                    expect(change2Times).toBe(1);
+                    expect(change3Times).toBe(0);
+                    delay(next);
+                })
+                .serial(done);
+        });
+
+        pipe('#match 路径匹配', function (done) {
+            var router = new Router();
+            var change1Times = 0;
+            var change2Times = 0;
+            var change3Times = 0;
+            var userName = '';
+            var param1 = '';
+
+            router
+                .match('/user/:userName', function (next) {
+                    change1Times++;
+                    userName = this.params.userName;
+                    next();
+                })
+                .match(/^\/user\/([^\/]+)$/, function () {
+                    param1 = this.params[1];
+                    change2Times++;
+                })
+                .match('/user/bbb', function (next) {
+                    change3Times++;
+                    next();
+                });
+
+            router.start();
+
+            plan
+                .task(function (next) {
+                    location.hash = '#/user/aaa';
+                    delay(next);
+                })
+                .task(function (next) {
+                    router.destroy();
+                    expect(change1Times).toBe(1);
+                    expect(change2Times).toBe(1);
+                    expect(change3Times).toBe(0);
+                    expect(userName).toBe('aaa');
+                    expect(param1).toBe('aaa');
+                    delay(next);
+                })
+                .serial(done);
+        });
+
+        pipe('#match + 同步控制器', function (done) {
+            var router = new Router();
+            var route1 = null;
+            var objA = {a: 'a'};
+
+            router
+                .match('/', function () {
+                    route1 = this;
+                    return objA;
+                });
+
+            router.start();
+
+            plan
+                .task(function (next) {
+                    router.destroy();
+                    expect(route1.controller).toBe(objA);
+                    delay(next);
+                })
+                .serial(done);
+        });
+
+        pipe('#match + 异步控制器', function (done) {
+            var router = new Router();
+            var route1 = null;
+            var objA = {a: 'a'};
+
+            router
+                .match('/', function (next) {
+                    route1 = this;
+                    setTimeout(function () {
+                        next(objA);
+                    }, 100);
+                });
+
+            router.start();
+
+            plan
+                .task(function (next) {
+                    delay(next);
+                })
+                .task(function (next) {
+                    router.destroy();
+                    expect(route1.controller).toBe(objA);
+                    delay(next);
+                })
+                .serial(done);
+        });
+
+        pipe('#otherwise + 同步控制器', function (done) {
+            var router = new Router();
+            var route1 = null;
+            var objA = {a: 'a'};
+
+            router
+                .otherwise(function () {
+                    route1 = this;
+                    return objA;
+                });
+
+            router.start();
+
+            plan
+                .task(function (next) {
+                    router.destroy();
+                    expect(route1.controller).toBe(objA);
+                    delay(next);
+                })
+                .serial(done);
+        });
+
+        pipe('#otherwise + 异步控制器', function (done) {
+            var router = new Router();
+            var route1 = null;
+            var objA = {a: 'a'};
+
+            router
+                .otherwise(function (next) {
+                    route1 = this;
+                    setTimeout(function () {
+                        next(objA);
+                    }, 100);
+                });
+
+            router.start();
+
+            plan
+                .task(function (next) {
+                    delay(next);
+                })
+                .task(function (next) {
+                    router.destroy();
+                    expect(route1.controller).toBe(objA);
+                    delay(next);
+                })
+                .serial(done);
+        });
+
+        pipe('#match 中间件跳转模式', function (done) {
             var router = new Router();
 
-            router.on('beforeChange', function (route) {
-                changeTimes++;
-                routeList.push(route);
+            router.match('/aaa', function (next) {
+                next('bbb');
             });
 
-            router.match(function (route, next) {
-                matchTimes++;
-                next();
+            router.start();
+
+            plan
+                .task(function (next) {
+                    location.hash = '#/aaa';
+                    delay(next);
+                })
+                .task(function (next) {
+                    expect(location.hash).toBe('#/bbb');
+                    router.destroy();
+                    delay(next);
+                })
+                .serial(done);
+        });
+
+        pipe('小route #resolve', function (done) {
+            var router = new Router();
+            var ret = '';
+
+            router.match('/a/b/c/d', function () {
+                ret = this.resolve('../../f');
             });
 
-            router.match('/a', function () {
-                return 'a';
+            router.start();
+
+            plan
+                .task(function (next) {
+                    location.hash = '#/a/b/c/d';
+                    delay(next);
+                })
+                .task(function (next) {
+                    expect(ret).toBe('/a/f');
+                    router.destroy();
+                    delay(next);
+                })
+                .serial(done);
+        });
+
+        pipe('小route #redirect', function (done) {
+            var router = new Router();
+
+            router.match('/a/b/c/d', function () {
+                this.redirect('../../f');
             });
 
-            router.match('/b', function (resolve) {
-                setTimeout(function () {
-                    resolve('b');
+            router.start();
+
+            plan
+                .task(function (next) {
+                    location.hash = '#/a/b/c/d';
+                    delay(next);
+                })
+                .task(function (next) {
+                    expect(location.hash.replace('#', '')).toBe('/a/f');
+                    router.destroy();
+                    history.back();
+                    delay(next);
+                })
+                .task(function (next) {
+                    expect(location.hash.replace('#', '')).toBe('/a/b/c/d');
+                    delay(next);
+                }).serial(done);
+        });
+
+        pipe('小route #rewrite', function (done) {
+            var router = new Router();
+
+            router.match('/a/b/c/d', function () {
+                this.rewrite('../../f');
+            });
+
+            router.start();
+
+            plan
+                .task(function (next) {
+                    location.hash = '#/a/b/c/d';
+                    delay(next);
+                })
+                .task(function (next) {
+                    expect(location.hash.replace('#', '')).toBe('/a/f');
+                    router.destroy();
+                    history.back();
+                    delay(next);
+                })
+                .task(function (next) {
+                    expect(location.hash.replace('#', '')).toBe('');
+                    delay(next);
+                })
+                .serial(done);
+        });
+
+        pipe('小route #setQuery', function (done) {
+            var router = new Router();
+
+            router.match('/a/b/c/d', function () {
+                this.setQuery({
+                    a: 11,
+                    b: 22
                 });
             });
 
@@ -269,158 +549,99 @@ describe('测试文件', function () {
 
             plan
                 .task(function (next) {
-                    location.hash = '#/a';
+                    location.hash = '#/a/b/c/d?a=1&b=2&c=3&c=4&c=5';
                     delay(next);
                 })
                 .task(function (next) {
-                    location.hash = '#/b';
-                    delay(next);
-                })
-                .task(function (next) {
+                    expect(location.hash.replace('#', '')).toMatch(/a=11&/);
+                    expect(location.hash.replace('#', '')).toMatch(/b=22&/);
                     router.destroy();
+                    history.back();
                     delay(next);
                 })
                 .task(function (next) {
-                    expect(matchTimes).toEqual(3);
-                    expect(routeList.length).toEqual(3);
-                    expect(routeList[0].controller).toEqual(null);
-                    expect(routeList[1].controller).toEqual('a');
-                    expect(routeList[2].controller).toEqual('b');
-                    expect(changeTimes).toEqual(3);
+                    expect(location.hash.replace('#', '')).toBe('');
                     delay(next);
                 })
                 .serial(done);
         });
 
-        pipe('#match(rule, fn) 无具名路由', function (done) {
-            var changeTimes = 0;
-            var matchTimes = 0;
-            var routeList = [];
+        pipe('小route #removeQuery', function (done) {
             var router = new Router();
 
-            router.on('beforeChange', function (route) {
-                changeTimes++;
-                routeList.push(route);
-            });
-
-            router.match('/a', function (route, next) {
-                matchTimes++;
-                next();
+            router.match('/a/b/c/d', function () {
+                this.removeQuery(['a', 'b', 'c'])
             });
 
             router.start();
 
             plan
                 .task(function (next) {
-                    location.hash = '#/a';
+                    location.hash = '#/a/b/c/d?a=1&b=2&c=3&c=4&c=5';
                     delay(next);
                 })
                 .task(function (next) {
-                    location.hash = '#/b';
-                    delay(next);
-                })
-                .task(function (next) {
+                    expect(location.hash.replace('#', '')).toBe('/a/b/c/d');
                     router.destroy();
+                    history.back();
                     delay(next);
                 })
                 .task(function (next) {
-                    expect(matchTimes).toEqual(1);
-                    expect(routeList.length).toEqual(3);
-                    expect(routeList[0].controller).toEqual(null);
-                    expect(routeList[1].controller).toEqual(null);
-                    expect(routeList[2].controller).toEqual(null);
-                    expect(changeTimes).toEqual(3);
+                    expect(location.hash.replace('#', '')).toBe('');
                     delay(next);
                 })
                 .serial(done);
         });
 
-        pipe('#match(rule, fn) 有具名路由匹配', function (done) {
-            var changeTimes = 0;
-            var matchTimes = 0;
-            var routeList = [];
+        pipe('边界：相同路由只触发一次', function (done) {
             var router = new Router();
-
-            router.on('beforeChange', function (route) {
-                changeTimes++;
-                routeList.push(route);
-            });
-
-            router.match('/a', function (route, next) {
-                matchTimes++;
-                next();
-            });
+            var changeTimes = 0;
 
             router.match('/a', function () {
-                return 'a';
-            });
-
-            router.match('/b', function (resolve) {
-                setTimeout(function () {
-                    resolve('b');
-                });
+                changeTimes++;
             });
 
             router.start();
 
             plan
                 .task(function (next) {
-                    location.hash = '#/a';
+                    location.hash = '/a?a=1&b=2&c=3&c=4&c=5';
                     delay(next);
                 })
                 .task(function (next) {
-                    location.hash = '#/b';
+                    location.hash = '/a?b=2&a=1&c=3&c=5&c=4';
                     delay(next);
                 })
                 .task(function (next) {
-                    expect(matchTimes).toEqual(1);
-                    expect(routeList.length).toEqual(3);
-                    expect(routeList[0].controller).toEqual(null);
-                    expect(routeList[1].controller).toEqual('a');
-                    expect(routeList[2].controller).toEqual('b');
-                    expect(changeTimes).toEqual(3);
+                    expect(changeTimes).toBe(1);
                     router.destroy();
                     delay(next);
                 })
                 .serial(done);
         });
 
-        pipe('#otherwise(fn)', function (done) {
-            var changeTimes = 0;
-            var matchTimes = 0;
-            var routeList = [];
+        pipe('边界：同时间内只解析一次', function (done) {
             var router = new Router();
 
-            router.on('beforeChange', function (route) {
-                changeTimes++;
-                routeList.push(route);
-            });
-
-            router.otherwise(function () {
-                return 'otherwise';
+            router.match(function (next) {
+                setTimeout(function () {
+                    next();
+                }, 300);
             });
 
             router.start();
 
             plan
                 .task(function (next) {
-                    location.hash = '#/a';
+                    expect(location.hash.replace('#', '')).toBe('');
+                    location.hash = '#/xxx';
                     delay(next);
                 })
                 .task(function (next) {
-                    location.hash = '#/b';
-                    delay(next);
-                })
-                .task(function (next) {
-                    expect(changeTimes).toEqual(3);
-                    expect(routeList.length).toEqual(3);
-                    expect(routeList[0].controller).toEqual('otherwise');
-                    expect(routeList[1].controller).toEqual('otherwise');
-                    expect(routeList[2].controller).toEqual('otherwise');
+                    expect(location.hash.replace('#', '')).toBe('');
                     router.destroy();
                     delay(next);
-                })
-                .serial(done);
+                }).serial(done);
         });
 
         water.serial(done);

@@ -55,7 +55,7 @@ var Router = Events.extend({
         the[_namedDirectorList] = [];
         the[_anonymousDirector] = the[_previousRoute] = null;
         // 是否正在解析状态，如果此时有新路由进入，则放弃该路由
-        the[_parsingState] = false;
+        the[_parsingState] = the[_destroyed] = false;
     },
 
 
@@ -185,6 +185,8 @@ var Router = Events.extend({
         }
 
         the[_options] = the[_namedDirectorList] = the[_anonymousDirector] = the[_previousRoute] = null;
+        event.un(win, 'popstate', the[_onWindowPopstate]);
+        the[_destroyed] = true;
         Router.invoke('destroy', the);
     }
 });
@@ -199,6 +201,7 @@ var _initPopstateEvent = sole();
 var _onWindowPopstate = sole();
 var _parseStateByStateType = sole();
 var _parsingState = sole();
+var _destroyed = sole();
 
 prop[_initAnonymousDirector] = function () {
     var the = this;
@@ -253,7 +256,8 @@ prop[_initPopstateEvent] = function () {
         route.assign({
             direction: direction,
             state: state,
-            location: location2
+            location: location2,
+            controller: null
         });
         nativeHistory.replaceState(state, null, location2);
 
@@ -263,6 +267,11 @@ prop[_initPopstateEvent] = function () {
 
         the[_previousRoute] = route;
         plan.each(the[_namedDirectorList], function (index, director, next) {
+            // 如果此时路由监听已销毁，则不做任何后续处理
+            if (the[_destroyed]) {
+                return;
+            }
+
             var directorPath = director.path;
             var matched = false;
 
@@ -299,12 +308,12 @@ prop[_initPopstateEvent] = function () {
                 return next();
             }
 
-            director.ctrl.call(route, /*next*/function (replaceTo) {
-                switch (typeis(replaceTo)) {
+            director.ctrl.call(route, /*next*/function (toOrController) {
+                switch (typeis(toOrController)) {
                     // 终点：替换当前 hashbang
                     case 'string':
-                        replaceTo = hashbang.set(url.resolve(pathname, replaceTo), options.split);
-                        nativeHistory.replaceState(state, null, replaceTo);
+                        toOrController = hashbang.set(url.resolve(pathname, toOrController), options.split);
+                        nativeHistory.replaceState(state, null, toOrController);
                         next(true);
                         the[_parseStateByStateType](STATE_TYPE_IS_REPLACE);
                         break;
@@ -322,20 +331,26 @@ prop[_initPopstateEvent] = function () {
 
                     // 加载的模块
                     default:
+                        route.controller = toOrController;
                         next(true);
                         break;
                 }
             });
         }).serial(function () {
+            var end = function () {
+                the.emit('afterChange', route);
+                the[_parsingState] = false;
+            };
+
             // 因为 plan 是异步的
-            if (!matchedNamedDirectorList.length) {
-                the[_anonymousDirector].ctrl.call(route, /*next*/function () {
-                    // ignore
+            if (matchedNamedDirectorList.length) {
+                end();
+            } else {
+                the[_anonymousDirector].ctrl.call(route, /*next*/function (controller) {
+                    route.controller = controller;
+                    end();
                 });
             }
-
-            the[_parsingState] = false;
-            the.emit('afterChange', route);
         });
     };
 
@@ -394,8 +409,7 @@ function wrapDirector(path1, ctrl1) {
     // });
     else {
         ctrl2 = function (next) {
-            ctrl1.call(this);
-            next();
+            next(ctrl1.call(this));
         }
     }
 
@@ -432,8 +446,13 @@ function isSameRoute(a, b) {
  */
 function dumpQuery(query1) {
     var query2 = {};
-    object.each(query1, function (key, val) {
+    // 保证 key 是一致的顺序
+    var keys = object.keys(query1).sort();
+    array.each(keys, function (index, key) {
+        var val = query1[key];
+
         if (typeis.Array(val)) {
+            // 保证数组是一致的顺序
             query2[key] = [].concat(val).sort();
         } else {
             query2[key] = val;

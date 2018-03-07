@@ -44,16 +44,6 @@ var Route = Class.extend({
     },
 
     /**
-     * 解决查询参数
-     * @param key
-     * @param val
-     * @returns {*}
-     */
-    resolveQuery: function (key, val) {
-        return url.setQuery(this.href, key, val);
-    },
-
-    /**
      * 跳转
      * @param to
      */
