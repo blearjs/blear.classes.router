@@ -19,6 +19,8 @@ var typeis = require('blear.utils.typeis');
 var hashbang = require('blear.core.hashbang');
 var event = require('blear.core.event');
 
+var Route = require('./route');
+
 var win = window;
 var nativeHistory = win.history;
 var STATE_TYPE_IS_PUSH = 0;
@@ -50,8 +52,9 @@ var Router = Events.extend({
 
         the[_options] = object.assign(true, {}, defaults, options);
         the[_namedDirectorList] = [];
-        the[_anonymousDirector] = null;
-        the[_previousRoute] = null;
+        the[_anonymousDirector] = the[_previousRoute] = null;
+        // 是否正在解析状态，如果此时有新路由进入，则放弃该路由
+        the[_parsingState] = false;
     },
 
 
@@ -132,16 +135,28 @@ var Router = Events.extend({
     },
 
     /**
-     * 重写 query
+     * 设置 query
      * @param key
-     * @param val
-     * @returns {string}
+     * @param [val]
+     * @returns {undefined}
      */
-    rewriteQuery: function (key, val) {
+    setQuery: function (key, val) {
         var the = this;
         var options = the[_options];
 
-        return location.href = hashbang.setQuery(key, val, options.split);
+        location.replace(hashbang.setQuery(key, val, options.split));
+    },
+
+    /**
+     * 移除 query
+     * @param key
+     * @returns {undefined}
+     */
+    removeQuery: function (key) {
+        var the = this;
+        var options = the[_options];
+
+        location.replace(hashbang.removeQuery(key, options.split));
     },
 
     /**
@@ -164,7 +179,12 @@ var Router = Events.extend({
     destroy: function () {
         var the = this;
 
-        the[_options] = the[_namedDirectorList] = the[_anonymousDirector] = null;
+        if (the[_previousRoute]) {
+            the[_previousRoute].destroy();
+        }
+
+        the[_options] = the[_namedDirectorList] = the[_anonymousDirector] = the[_previousRoute] = null;
+        Router.invoke('destroy', the);
     }
 });
 var prop = Router.prototype;
@@ -177,6 +197,7 @@ var _initAnonymousDirector = sole();
 var _initPopstateEvent = sole();
 var _onWindowPopstate = sole();
 var _parseStateByStateType = sole();
+var _parsingState = sole();
 
 prop[_initAnonymousDirector] = function () {
     var the = this;
@@ -191,39 +212,47 @@ prop[_initPopstateEvent] = function () {
     var options = the[_options];
 
     the[_parseStateByStateType] = function (stateType) {
-        var route = hashbang.parse();
+        var previousRoute = the[_previousRoute];
+        var previousState = previousRoute && previousRoute.state;
 
-        // 如果路由没变化就不做任何处理
-        if (isSameRoute(the[_previousRoute], route)) {
+        // 如果正在解析
+        if (the[_parsingState] && previousRoute) {
+            nativeHistory.replaceState(previousState, null, previousRoute.location);
             return;
         }
 
+        var route = new Route({
+            split: options.split
+        });
+
+        // 如果路由没变化就不做任何处理
+        if (isSameRoute(previousRoute, route)) {
+            return;
+        }
+
+        the[_parsingState] = true;
         var state = getState();
         var pathname = route.pathname;
         var matchedNamedDirectorList = [];
-        var previousState = the[_previousRoute] && the[_previousRoute].state;
         // 这里用时间戳来判断，而不用 id，原因是：
         // id 是一个固定起始值，会与历史记录重复导致方向判断错误
         // 而时间戳是一个自增值，不会与历史记录重复
         var direction = state && previousState &&
         state.timestamp && previousState.timestamp &&
         state.timestamp < previousState.timestamp ? 'backward' : 'forward';
+        var location2 = location.href;
 
         if (stateType === STATE_TYPE_IS_REPLACE) {
             direction = 'replace';
         }
 
-        route.direction = direction;
-        route.state = state;
-        route.resolve = function (to) {
-            return url.resolve(route.href, to);
-        };
-        route.resolveQuery = function (key, val) {
-            return url.setQuery(route.href, key, val);
-        };
-
-
-        nativeHistory.replaceState(state, null, route.location = location.href);
+        route.assign({
+            direction: direction,
+            state: state,
+            location: location2
+        });
+        nativeHistory.replaceState(state, null, location2);
+        the[_previousRoute].destroy();
         the[_previousRoute] = route;
         plan.each(the[_namedDirectorList], function (index, director, next) {
             var directorPath = director.path;
@@ -296,6 +325,8 @@ prop[_initPopstateEvent] = function () {
                     // ignore
                 });
             }
+
+            the[_parsingState] = false;
         });
     };
 

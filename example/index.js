@@ -13,26 +13,31 @@ var Router = require('../src/index');
 var router = new Router();
 
 router
-// // 匿名路径
-//     .match(function (next) {
-//         console.log('1 start');
-//         next();
-//     })
-//     .match(function (next) {
-//         console.log('2');
-//
-//         setTimeout(function () {
-//             next();
-//         }, 100);
-//     })
-//     .match(function () {
-//         console.log('3 end');
-//     })
-//     .match(function () {
-//         console.log('永不会执行');
-//     })
+    .match(function (next) {
+        console.log('enter', this.href);
+        next();
+    })
 
-// 具名路由
+    // // 匿名路径
+    //     .match(function (next) {
+    //         console.log('1 start');
+    //         next();
+    //     })
+    //     .match(function (next) {
+    //         console.log('2');
+    //
+    //         setTimeout(function () {
+    //             next();
+    //         }, 100);
+    //     })
+    //     .match(function () {
+    //         console.log('3 end');
+    //     })
+    //     .match(function () {
+    //         console.log('永不会执行');
+    //     })
+
+    // 具名路由
     .match(function (next) {
         console.log('不管什么路由，都要经过我');
         next();
@@ -80,11 +85,31 @@ router
     })
 
     .match('/user/def/ghi', function () {
-        console.log(this);
-        console.log(this.resolve('../../aaa'));
-        console.log(this.resolveQuery('a', 1));
-        console.log(this.resolveQuery('a', [1, 2, 3]));
-        console.log(this.resolveQuery({a: 1, b: 2, c: [3, 4]}));
+        var route = this;
+
+        console.log(route);
+        console.log(route.resolve('../../aaa'));
+        console.log(route.resolveQuery('a', 1));
+        console.log(route.resolveQuery('a', [1, 2, 3]));
+        console.log(route.resolveQuery({a: 1, b: 2, c: [3, 4]}));
+
+        route.redirect('a');
+    })
+
+    .match('/aaa', function (next) {
+        var route = this;
+        setTimeout(function () {
+            route.redirect('/aaa/111');
+            next({});
+        }, 100);
+    })
+
+    .match('/eee', function (next) {
+        console.log('/eee');
+
+        setTimeout(function () {
+            next({});
+        }, 100000);
     })
 
     .otherwise(function () {
