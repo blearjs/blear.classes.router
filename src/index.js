@@ -372,13 +372,11 @@ module.exports = Router;
 
 /**
  * 下一个 state
- * @returns {{id: number, timestamp: number}}
+ * @returns {{timestamp: number}}
  */
 function nextState() {
-    var id = Date.now();
     return {
-        id: id,
-        timestamp: id
+        timestamp: Date.now()
     };
 }
 

@@ -15,6 +15,7 @@ var time = require('blear.utils.time');
 var url = require('blear.utils.url');
 
 var nextTick = time.nextTick;
+var routeId = 0;
 
 var Route = Class.extend({
     className: 'Route',
@@ -23,6 +24,7 @@ var Route = Class.extend({
 
         Route.parent(the);
         the[_split] = options.split;
+        the.id = routeId++;
         object.assign(the, hashbang.parse());
     },
 
