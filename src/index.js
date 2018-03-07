@@ -50,6 +50,7 @@ var Router = Events.extend({
     constructor: function (options) {
         var the = this;
 
+        Router.parent(the);
         the[_options] = object.assign(true, {}, defaults, options);
         the[_namedDirectorList] = [];
         the[_anonymousDirector] = the[_previousRoute] = null;
@@ -227,9 +228,12 @@ prop[_initPopstateEvent] = function () {
 
         // 如果路由没变化就不做任何处理
         if (isSameRoute(previousRoute, route)) {
+            route.destroy();
+            the.emit('repeat', previousRoute);
             return;
         }
 
+        the.emit('beforeChange', route);
         the[_parsingState] = true;
         var state = getState();
         var pathname = route.pathname;
@@ -252,7 +256,11 @@ prop[_initPopstateEvent] = function () {
             location: location2
         });
         nativeHistory.replaceState(state, null, location2);
-        the[_previousRoute].destroy();
+
+        if (the[_previousRoute]) {
+            the[_previousRoute].destroy();
+        }
+
         the[_previousRoute] = route;
         plan.each(the[_namedDirectorList], function (index, director, next) {
             var directorPath = director.path;
@@ -327,6 +335,7 @@ prop[_initPopstateEvent] = function () {
             }
 
             the[_parsingState] = false;
+            the.emit('afterChange', route);
         });
     };
 

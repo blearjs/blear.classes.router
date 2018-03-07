@@ -21,6 +21,7 @@ var Route = Class.extend({
     constructor: function (options) {
         var the = this;
 
+        Route.parent(the);
         the[_split] = options.split;
         object.assign(the, hashbang.parse());
     },

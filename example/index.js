@@ -120,6 +120,8 @@ document.getElementById('rewrite').onclick = function () {
     router.rewriteQuery('r', Math.random());
 };
 
-router.start();
+router.start().on('repeat', function (route) {
+    console.log(route);
+});
 
 window.router = router;
