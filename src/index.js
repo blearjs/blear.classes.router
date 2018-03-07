@@ -19,8 +19,6 @@ var typeis = require('blear.utils.typeis');
 var hashbang = require('blear.core.hashbang');
 var event = require('blear.core.event');
 
-var History = require('./history');
-
 var win = window;
 var nativeHistory = win.history;
 var STATE_TYPE_IS_PUSH = 0;
