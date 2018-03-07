@@ -372,7 +372,7 @@ module.exports = Router;
 
 /**
  * 下一个 state
- * @returns {{timestamp: number}}
+ * @returns {{id: number, timestamp: number}}
  */
 function nextState() {
     var id = Date.now();
