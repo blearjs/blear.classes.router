@@ -43,13 +43,25 @@ var History = Class.extend({
 
     /**
      * 后退
+     * @param item
      * @returns {*}
      */
-    backward: function () {
+    backward: function (item) {
         var the = this;
-        var prev = the.list[the.active];
-        var item = the.list[--the.active];
-        item.prev = prev;
+
+        if (the.active > 0) {
+            var prev = the.list[the.active];
+            item = the.list[--the.active];
+            item.prev = prev;
+        } else {
+            // 主要用于，浏览器在刷新页面之后，浏览器历史栈还是保留的
+            // 这时候返回页面需要用插入的方式进行
+            the.list.unshift(the[_wrap](item));
+            the.list[1].prev = item;
+            item.prev = null;
+            the.length++;
+        }
+
         return item;
     },
 

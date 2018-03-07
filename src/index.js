@@ -12,6 +12,7 @@ var Events = require('blear.classes.events');
 var access = require('blear.utils.access');
 var array = require('blear.utils.array');
 var object = require('blear.utils.object');
+var qs = require('blear.utils.querystring');
 var plan = require('blear.utils.plan');
 var url = require('blear.utils.url');
 var typeis = require('blear.utils.typeis');
@@ -52,8 +53,7 @@ var Router = Events.extend({
         the[_options] = object.assign(true, {}, defaults, options);
         the[_namedDirectorList] = [];
         the[_anonymousDirector] = null;
-        the[_previousState] = null;
-        the[_historyManger] = new History();
+        the[_previousRoute] = null;
     },
 
 
@@ -174,8 +174,7 @@ var sole = Router.sole;
 var _options = sole();
 var _namedDirectorList = sole();
 var _anonymousDirector = sole();
-var _previousState = sole();
-var _historyManger = sole();
+var _previousRoute = sole();
 var _initAnonymousDirector = sole();
 var _initPopstateEvent = sole();
 var _onWindowPopstate = sole();
@@ -195,15 +194,22 @@ prop[_initPopstateEvent] = function () {
 
     the[_parseStateByStateType] = function (stateType) {
         var route = hashbang.parse();
+
+        // 如果路由没变化就不做任何处理
+        if (isSameRoute(the[_previousRoute], route)) {
+            return;
+        }
+
         var state = getState();
         var pathname = route.pathname;
         var matchedNamedDirectorList = [];
+        var previousState = the[_previousRoute] && the[_previousRoute].state;
         // 这里用时间戳来判断，而不用 id，原因是：
         // id 是一个固定起始值，会与历史记录重复导致方向判断错误
         // 而时间戳是一个自增值，不会与历史记录重复
-        var direction = state && the[_previousState] &&
-        state.timestamp && the[_previousState].timestamp &&
-        state.timestamp < the[_previousState].timestamp ? 'backward' : 'forward';
+        var direction = state && previousState &&
+        state.timestamp && previousState.timestamp &&
+        state.timestamp < previousState.timestamp ? 'backward' : 'forward';
 
         if (stateType === STATE_TYPE_IS_REPLACE) {
             direction = 'replace';
@@ -217,8 +223,10 @@ prop[_initPopstateEvent] = function () {
         route.resolveQuery = function (key, val) {
             return url.setQuery(route.href, key, val);
         };
-        nativeHistory.replaceState(the[_previousState] = state, null, route.location = location.href);
-        the[_historyManger][direction](route);
+
+
+        nativeHistory.replaceState(state, null, route.location = location.href);
+        the[_previousRoute] = route;
         plan.each(the[_namedDirectorList], function (index, director, next) {
             var directorPath = director.path;
             var matched = false;
@@ -358,4 +366,40 @@ function wrapDirector(path1, ctrl1) {
         path: path1,
         async: async
     };
+}
+
+/**
+ * 判断是否同一个 route
+ * @param a
+ * @param b
+ * @returns {boolean}
+ */
+function isSameRoute(a, b) {
+    if (!a) {
+        return false;
+    }
+
+    if (a.pathname !== b.pathname) {
+        return false;
+    }
+
+    return dumpQuery(a.query) === dumpQuery(b.query);
+}
+
+
+/**
+ * 抹平 query
+ * @param query1
+ * @returns {{}}
+ */
+function dumpQuery(query1) {
+    var query2 = {};
+    object.each(query1, function (key, val) {
+        if (typeis.Array(val)) {
+            query2[key] = [].concat(val).sort();
+        } else {
+            query2[key] = val;
+        }
+    });
+    return qs.stringify(query2);
 }

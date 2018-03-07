@@ -96,3 +96,5 @@ document.getElementById('rewrite').onclick = function () {
 };
 
 router.start();
+
+window.router = router;
