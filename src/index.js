@@ -198,6 +198,7 @@ var _parseStateByStateType = sole();
 var _parsingLocation = sole();
 var _destroyed = sole();
 var _navigator = sole();
+var _matchRule = sole();
 var _execDirector = sole();
 
 prop[_initAnonymousDirector] = function () {
@@ -272,36 +273,7 @@ prop[_initPopstateEvent] = function () {
                 return;
             }
 
-            var rule = director.rule;
-            var matched = false;
-
-            // 具名路径
-            if (rule) {
-                switch (typeis(rule)) {
-                    case 'string':
-                        matched = route.params = url.matchPath(pathname, rule, {
-                            strict: options.strict,
-                            ignoreCase: options.ignoreCase
-                        });
-                        break;
-
-                    case 'regexp':
-                        var matches = pathname.match(rule);
-
-                        if (matches) {
-                            matched = route.params = array.from(matches);
-                        }
-                        break;
-                }
-
-                if (matched) {
-                    matchedNamedDirectorList.push(director);
-                }
-            }
-            // 匿名路径
-            else {
-                matched = true;
-            }
+            var matched = the[_matchRule](matchedNamedDirectorList, route, director);
 
             // 未匹配到
             if (!matched) {
@@ -334,33 +306,62 @@ prop[_initPopstateEvent] = function () {
     });
 };
 
+prop[_matchRule] = function (matchedNamedDirectorList, route, director) {
+    var the = this;
+    var options = the[_options];
+    var matched = false;
+    var rule = director.rule;
+    var pathname = route.pathname;
+
+    // 具名路径
+    if (rule) {
+        switch (typeis(rule)) {
+            case 'string':
+                matched = route.params = url.matchPath(pathname, rule, {
+                    strict: options.strict,
+                    ignoreCase: options.ignoreCase
+                });
+                break;
+
+            case 'regexp':
+                var matches = pathname.match(rule);
+
+                if (matches) {
+                    matched = route.params = array.from(matches);
+                }
+                break;
+        }
+
+        if (matched) {
+            matchedNamedDirectorList.push(director);
+        }
+    }
+    // 匿名路径
+    else {
+        matched = true;
+    }
+
+    return matched;
+};
+
 prop[_execDirector] = function (route, director, callback) {
     var the = this;
     var execController = function (controller) {
         director.controller = controller;
         route.controller = controller;
-        switch (typeis(controller)) {
-            // 终点：替换当前 hashbang
-            case 'string':
+
+        // 终点导航器
+        if (director.final) {
+            callback(true);
+        }
+        // 中间导航器
+        else {
+            if (typeis.String(controller)) {
                 the[_navigator].rewrite(controller);
                 callback(true);
-                break;
-
-            case 'undefined':
-                // 异步：过渡
-                if (director.async) {
-                    callback();
-                }
-                // 同步：终点
-                else {
-                    callback(true);
-                }
-                break;
-
-            // 加载的模块
-            default:
-                callback(true);
-                break;
+            } else {
+                callback();
+            }
         }
     };
     var controller = director.controller;
