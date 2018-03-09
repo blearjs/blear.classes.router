@@ -16,10 +16,8 @@ var array = require('blear.utils.array');
 var object = require('blear.utils.object');
 var qs = require('blear.utils.querystring');
 var plan = require('blear.utils.plan');
-var fun = require('blear.utils.function');
 var url = require('blear.utils.url');
 var typeis = require('blear.utils.typeis');
-var hashbang = require('blear.core.hashbang');
 var event = require('blear.core.event');
 
 var Route = require('./route');
@@ -72,7 +70,7 @@ var Router = Events.extend({
     },
 
     /**
-     * 路由匹配
+     * 中间件路由匹配
      * @param [path]
      * @param loader
      * @returns {Router}
@@ -80,18 +78,12 @@ var Router = Events.extend({
     match: function (path, loader) {
         var args = access.args(arguments);
         var the = this;
-        var path2 = null;
-        var loader2 = null;
+        var path2 = args[0];
+        var loader2 = args[1];
 
-        switch (args.length) {
-            case 1:
-                path2 = null;
-                loader2 = args[0];
-                break;
-
-            case 2:
-                path2 = args[0];
-                loader2 = args[1];
+        if (args.length === 1) {
+            loader2 = args[0];
+            path2 = null;
         }
 
         the[_namedDirectorList].push(wrapDirector(path2, loader2));
@@ -100,12 +92,20 @@ var Router = Events.extend({
 
     /**
      * 否则路由不匹配
-     * @param controller
+     * @param [path]
+     * @param loader
      * @returns {Router}
      */
-    otherwise: function (controller) {
+    get: function (path, loader) {
+        var args = access.args(arguments);
         var the = this;
-        the[_anonymousDirector] = wrapDirector(null, controller);
+
+        if (args.length === 1) {
+            the[_anonymousDirector] = wrapDirector(null, args[0]);
+        } else {
+            the[_namedDirectorList].push(wrapDirector(path, loader));
+        }
+
         return the;
     },
 

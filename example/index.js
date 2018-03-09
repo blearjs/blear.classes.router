@@ -38,10 +38,6 @@ router
     //     })
 
     // 具名路由
-    .match(function (next) {
-        console.log('不管什么路由，都要经过我');
-        next();
-    })
     .match('/user/abc/:abc1', function (next) {
         console.log('1 start', 'params.abc1 =', this.params.abc1);
         next();
@@ -58,7 +54,7 @@ router
         console.log('4');
         next('./12345');
     })
-    .match('/user/abc/12345', function (next) {
+    .get('/user/abc/12345', function (next) {
         console.log('5 end');
 
         setTimeout(function () {
@@ -76,15 +72,15 @@ router
             next();
         }, 500);
     })
-    .match('/user/def/456', function (next) {
+    .get('/user/def/456', function (next) {
         console.log('2');
         require.async('./async/def.js', next);
     })
-    .match('/user/def/456', function () {
+    .get('/user/def/456', function () {
         console.log('打印了这个日志，说明出错了');
     })
 
-    .match('/user/def/ghi', function () {
+    .get('/user/def/ghi', function () {
         var route = this;
 
         console.log(route);
@@ -93,7 +89,7 @@ router
         route.redirect('a');
     })
 
-    .match('/aaa', function (next) {
+    .get('/aaa', function (next) {
         var route = this;
         setTimeout(function () {
             route.redirect('/aaa/111');
@@ -101,7 +97,7 @@ router
         }, 100);
     })
 
-    .match('/eee', function (next) {
+    .get('/eee', function (next) {
         console.log('/eee');
 
         setTimeout(function () {
@@ -109,12 +105,12 @@ router
         }, 100000);
     })
 
-    .otherwise(function () {
+    .get(function () {
         console.log('load 404');
     });
 
 document.getElementById('rewrite').onclick = function () {
-    router.rewriteQuery('r', Math.random());
+    router.setQuery('r', Math.random());
 };
 
 router.start().on('repeat', function (route) {
