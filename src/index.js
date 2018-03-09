@@ -395,6 +395,8 @@ function getState() {
     return nativeHistory.state || nextState();
 }
 
+var directorId = 0;
+
 /**
  * 包装控制器
  * @param path1
@@ -425,6 +427,7 @@ function wrapDirector(path1, loader1) {
     }
 
     return {
+        id: directorId++,
         loader: loader2,
         path: path1,
         async: async
