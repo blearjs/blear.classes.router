@@ -255,7 +255,7 @@ describe('测试文件', function () {
                     router.destroy();
                     expect(change1Times).toBe(1);
                     expect(change2Times).toBe(1);
-                    expect(change3Times).toBe(0);
+                    expect(change3Times).toBe(1);
                     delay(next);
                 })
                 .serial(done);
@@ -367,7 +367,7 @@ describe('测试文件', function () {
             var objA = {a: 'a'};
 
             router
-                .match('/', function (next) {
+                .get('/', function (next) {
                     route1 = this;
                     setTimeout(function () {
                         next(objA);
@@ -388,13 +388,13 @@ describe('测试文件', function () {
                 .serial(done);
         });
 
-        pipe('#otherwise + 同步控制器', function (done) {
+        pipe('#get(loader) + 同步控制器', function (done) {
             var router = new Router();
             var route1 = null;
             var objA = {a: 'a'};
 
             router
-                .otherwise(function () {
+                .get(function () {
                     route1 = this;
                     return objA;
                 });
@@ -410,13 +410,13 @@ describe('测试文件', function () {
                 .serial(done);
         });
 
-        pipe('#otherwise + 异步控制器', function (done) {
+        pipe('#get(loader) + 异步控制器', function (done) {
             var router = new Router();
             var route1 = null;
             var objA = {a: 'a'};
 
             router
-                .otherwise(function (next) {
+                .get(function (next) {
                     route1 = this;
                     setTimeout(function () {
                         next(objA);
