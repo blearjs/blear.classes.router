@@ -255,7 +255,6 @@ prop[_initPopstateEvent] = function () {
             direction = 'replace';
         }
 
-
         route.assign({
             direction: direction,
             state: state,
