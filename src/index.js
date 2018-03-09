@@ -16,6 +16,7 @@ var array = require('blear.utils.array');
 var object = require('blear.utils.object');
 var qs = require('blear.utils.querystring');
 var plan = require('blear.utils.plan');
+var fun = require('blear.utils.function');
 var url = require('blear.utils.url');
 var typeis = require('blear.utils.typeis');
 var hashbang = require('blear.core.hashbang');
@@ -73,27 +74,27 @@ var Router = Events.extend({
     /**
      * 路由匹配
      * @param [path]
-     * @param controller
+     * @param loader
      * @returns {Router}
      */
-    match: function (path, controller) {
+    match: function (path, loader) {
         var args = access.args(arguments);
         var the = this;
         var path2 = null;
-        var ctrl2 = null;
+        var loader2 = null;
 
         switch (args.length) {
             case 1:
                 path2 = null;
-                ctrl2 = args[0];
+                loader2 = args[0];
                 break;
 
             case 2:
                 path2 = args[0];
-                ctrl2 = args[1];
+                loader2 = args[1];
         }
 
-        the[_namedDirectorList].push(wrapDirector(path2, ctrl2));
+        the[_namedDirectorList].push(wrapDirector(path2, loader2));
         return the;
     },
 
@@ -197,6 +198,7 @@ var _parseStateByStateType = sole();
 var _parsingState = sole();
 var _destroyed = sole();
 var _navigator = sole();
+var _execDirector = sole();
 
 prop[_initAnonymousDirector] = function () {
     var the = this;
@@ -250,8 +252,7 @@ prop[_initPopstateEvent] = function () {
         route.assign({
             direction: direction,
             state: state,
-            location: loc,
-            controller: null
+            location: loc
         });
         nativeHistory.replaceState(state, null, loc);
 
@@ -302,32 +303,7 @@ prop[_initPopstateEvent] = function () {
                 return next();
             }
 
-            director.ctrl.call(route, /*next*/function (toOrController) {
-                switch (typeis(toOrController)) {
-                    // 终点：替换当前 hashbang
-                    case 'string':
-                        the[_navigator].rewrite(toOrController);
-                        next(true);
-                        break;
-
-                    case 'undefined':
-                        // 异步：过渡
-                        if (director.async) {
-                            next();
-                        }
-                        // 同步：终点
-                        else {
-                            next(true);
-                        }
-                        break;
-
-                    // 加载的模块
-                    default:
-                        route.controller = toOrController;
-                        next(true);
-                        break;
-                }
-            });
+            the[_execDirector](route, director, next);
         }).serial(function () {
             // 如果此时路由监听已销毁，则不做任何后续处理
             if (the[_destroyed]) {
@@ -335,18 +311,15 @@ prop[_initPopstateEvent] = function () {
             }
 
             var end = function () {
-                the.emit('afterChange', route);
                 the[_parsingState] = false;
+                the.emit('afterChange', route);
             };
 
             // 因为 plan 是异步的
             if (matchedNamedDirectorList.length) {
                 end();
             } else {
-                the[_anonymousDirector].ctrl.call(route, /*next*/function (controller) {
-                    route.controller = controller;
-                    end();
-                });
+                the[_execDirector](route, the[_anonymousDirector], end);
             }
         });
     };
@@ -354,6 +327,44 @@ prop[_initPopstateEvent] = function () {
     event.on(win, 'popstate', the[_onWindowPopstate] = function (ev) {
         the[_parseStateByStateType](STATE_TYPE_IS_POP);
     });
+};
+
+prop[_execDirector] = function (route, director, callback) {
+    var execController = function (controller) {
+        director.controller = controller;
+        route.controller = controller;
+        switch (typeis(controller)) {
+            // 终点：替换当前 hashbang
+            case 'string':
+                the[_navigator].rewrite(controller);
+                callback(true);
+                break;
+
+            case 'undefined':
+                // 异步：过渡
+                if (director.async) {
+                    callback();
+                }
+                // 同步：终点
+                else {
+                    callback(true);
+                }
+                break;
+
+            // 加载的模块
+            default:
+                callback(true);
+                break;
+        }
+    };
+
+    var controller = director.controller;
+
+    if (controller) {
+        execController(controller);
+    } else {
+        director.loader(execController);
+    }
 };
 
 Router.defaults = defaults;
@@ -381,34 +392,34 @@ function getState() {
 /**
  * 包装控制器
  * @param path1
- * @param ctrl1
- * @returns {{ctrl: *, path: *, async: boolean}}
+ * @param loader1
+ * @returns {{loader: *, path: *, async: boolean}}
  */
-function wrapDirector(path1, ctrl1) {
+function wrapDirector(path1, loader1) {
     var async = false;
-    var ctrl2 = null;
+    var loader2 = null;
 
     // 通过回调函数的参数个数来与判断路由回调类型
     // 异步控制器
     // router.match(path, function (resolve) {
     //     resolve(nextPath);
     // });
-    if (ctrl1.length === 1) {
+    if (loader1.length === 1) {
         async = true;
-        ctrl2 = ctrl1;
+        loader2 = loader1;
     }
     // 默认是同步控制器
     // router.match(path, function () {
     //    do sth.
     // });
     else {
-        ctrl2 = function (next) {
-            next(ctrl1.call(this));
+        loader2 = function (next) {
+            next(loader1.call(this));
         }
     }
 
     return {
-        ctrl: ctrl2,
+        loader: loader2,
         path: path1,
         async: async
     };
