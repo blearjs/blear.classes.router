@@ -239,7 +239,6 @@ prop[_initPopstateEvent] = function () {
             return;
         }
 
-        console.log('parse hash', location.hash);
         the.emit('beforeChange', route);
         var loc = the[_parsingLocation] = location.href;
         var state = getState();
