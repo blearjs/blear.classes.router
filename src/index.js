@@ -67,7 +67,7 @@ var Router = Events.extend({
         the[_namedDirectorList] = [];
         the[_anonymousDirector] = the[_previousRoute] = null;
         // 是否正在解析状态，如果此时有新路由进入，则放弃该路由
-        the[_parsingState] = the[_destroyed] = false;
+        the[_parsingLocation] = the[_destroyed] = false;
         the[_navigator] = navigate(the[_options].mode, the[_options].split);
     },
 
@@ -193,9 +193,10 @@ var _anonymousDirector = sole();
 var _previousRoute = sole();
 var _initAnonymousDirector = sole();
 var _initPopstateEvent = sole();
+var _initClickEvent = sole();
 var _onWindowPopstate = sole();
 var _parseStateByStateType = sole();
-var _parsingState = sole();
+var _parsingLocation = sole();
 var _destroyed = sole();
 var _navigator = sole();
 var _execDirector = sole();
@@ -211,17 +212,24 @@ prop[_initAnonymousDirector] = function () {
 prop[_initPopstateEvent] = function () {
     var the = this;
     var options = the[_options];
+    var isDrop = false;
 
     the[_parseStateByStateType] = function (stateType) {
-        var previousRoute = the[_previousRoute];
-        var previousState = previousRoute && previousRoute.state;
-
-        // 如果正在解析
-        if (the[_parsingState] && previousRoute) {
-            nativeHistory.replaceState(previousState, null, previousRoute.location);
+        // 如果是主动放弃的则不做任何处理，防止导航历史增长
+        if (isDrop) {
+            isDrop = false;
             return;
         }
 
+        // 如果正在解析
+        if (the[_parsingLocation]) {
+            isDrop = true;
+            history.back();
+            return;
+        }
+
+        var previousRoute = the[_previousRoute];
+        var previousState = previousRoute && previousRoute.state;
         var route = new Route(the[_navigator]);
 
         // 如果路由没变化就不做任何处理
@@ -231,8 +239,9 @@ prop[_initPopstateEvent] = function () {
             return;
         }
 
+        console.log('parse hash', location.hash);
         the.emit('beforeChange', route);
-        the[_parsingState] = true;
+        var loc = the[_parsingLocation] = location.href;
         var state = getState();
         var pathname = route.pathname;
         var matchedNamedDirectorList = [];
@@ -247,7 +256,6 @@ prop[_initPopstateEvent] = function () {
             direction = 'replace';
         }
 
-        var loc = location.href;
 
         route.assign({
             direction: direction,
@@ -255,12 +263,12 @@ prop[_initPopstateEvent] = function () {
             location: loc
         });
         nativeHistory.replaceState(state, null, loc);
+        the[_previousRoute] = route;
 
         if (the[_previousRoute]) {
             the[_previousRoute].destroy();
         }
 
-        the[_previousRoute] = route;
         plan.each(the[_namedDirectorList], function (index, director, next) {
             // 如果此时路由监听已销毁，则不做任何后续处理
             if (the[_destroyed]) {
@@ -311,8 +319,8 @@ prop[_initPopstateEvent] = function () {
             }
 
             var end = function () {
-                the[_parsingState] = false;
                 the.emit('afterChange', route);
+                the[_parsingLocation] = false;
             };
 
             // 因为 plan 是异步的
