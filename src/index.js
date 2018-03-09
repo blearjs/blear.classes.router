@@ -70,40 +70,40 @@ var Router = Events.extend({
     },
 
     /**
-     * 中间件路由匹配
-     * @param [path]
+     * 中间路由匹配
+     * @param [rule]
      * @param loader
      * @returns {Router}
      */
-    match: function (path, loader) {
+    match: function (rule, loader) {
         var args = access.args(arguments);
         var the = this;
-        var path2 = args[0];
+        var rule2 = args[0];
         var loader2 = args[1];
 
         if (args.length === 1) {
             loader2 = args[0];
-            path2 = null;
+            rule2 = null;
         }
 
-        the[_namedDirectorList].push(wrapDirector(path2, loader2));
+        the[_namedDirectorList].push(wrapDirector(rule2, loader2));
         return the;
     },
 
     /**
-     * 否则路由不匹配
-     * @param [path]
+     * 终点路由匹配
+     * @param [rule]
      * @param loader
      * @returns {Router}
      */
-    get: function (path, loader) {
+    get: function (rule, loader) {
         var args = access.args(arguments);
         var the = this;
 
         if (args.length === 1) {
-            the[_anonymousDirector] = wrapDirector(null, args[0]);
+            the[_anonymousDirector] = wrapDirector(null, args[0], true);
         } else {
-            the[_namedDirectorList].push(wrapDirector(path, loader));
+            the[_namedDirectorList].push(wrapDirector(rule, loader, true));
         }
 
         return the;
@@ -193,7 +193,6 @@ var _anonymousDirector = sole();
 var _previousRoute = sole();
 var _initAnonymousDirector = sole();
 var _initPopstateEvent = sole();
-var _initClickEvent = sole();
 var _onWindowPopstate = sole();
 var _parseStateByStateType = sole();
 var _parsingLocation = sole();
@@ -273,21 +272,21 @@ prop[_initPopstateEvent] = function () {
                 return;
             }
 
-            var directorPath = director.path;
+            var rule = director.rule;
             var matched = false;
 
             // 具名路径
-            if (directorPath) {
-                switch (typeis(directorPath)) {
+            if (rule) {
+                switch (typeis(rule)) {
                     case 'string':
-                        matched = route.params = url.matchPath(pathname, directorPath, {
+                        matched = route.params = url.matchPath(pathname, rule, {
                             strict: options.strict,
                             ignoreCase: options.ignoreCase
                         });
                         break;
 
                     case 'regexp':
-                        var matches = pathname.match(directorPath);
+                        var matches = pathname.match(rule);
 
                         if (matches) {
                             matched = route.params = array.from(matches);
@@ -336,6 +335,7 @@ prop[_initPopstateEvent] = function () {
 };
 
 prop[_execDirector] = function (route, director, callback) {
+    var the = this;
     var execController = function (controller) {
         director.controller = controller;
         route.controller = controller;
@@ -363,13 +363,14 @@ prop[_execDirector] = function (route, director, callback) {
                 break;
         }
     };
-
     var controller = director.controller;
+
+    route.rule = director.rule;
 
     if (controller) {
         execController(controller);
     } else {
-        director.loader(execController);
+        director.loader.call(route, execController);
     }
 };
 
@@ -398,12 +399,13 @@ function getState() {
 var directorId = 0;
 
 /**
- * 包装控制器
- * @param path1
+ * 包装导航器
+ * @param rule1
  * @param loader1
- * @returns {{loader: *, path: *, async: boolean}}
+ * @param [final=false]
+ * @returns {{loader: *, rule: *, async: boolean, final: boolean}}
  */
-function wrapDirector(path1, loader1) {
+function wrapDirector(rule1, loader1, final) {
     var async = false;
     var loader2 = null;
 
@@ -429,7 +431,8 @@ function wrapDirector(path1, loader1) {
     return {
         id: directorId++,
         loader: loader2,
-        path: path1,
+        final: final || false,
+        rule: rule1,
         async: async
     };
 }
