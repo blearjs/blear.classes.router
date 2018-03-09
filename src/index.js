@@ -458,7 +458,7 @@ function isSameRoute(a, b) {
 /**
  * 抹平 query
  * @param query1
- * @returns {{}}
+ * @returns {string}
  */
 function dumpQuery(query1) {
     var query2 = {};
