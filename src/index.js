@@ -65,7 +65,11 @@ var Router = Events.extend({
         the[_namedDirectorList] = [];
         the[_anonymousDirector] = the[_previousRoute] = null;
         // 是否正在解析状态，如果此时有新路由进入，则放弃该路由
-        the[_parsingLocation] = the[_destroyed] = false;
+        the[_parsingLocation]
+            = the[_destroyed]
+            // 是否解析到终点
+            = the[_parsedFinal]
+            = false;
         the[_navigator] = navigate(the[_options].mode, the[_options].split);
     },
 
@@ -196,6 +200,7 @@ var _initPopstateEvent = sole();
 var _onWindowPopstate = sole();
 var _parseStateByStateType = sole();
 var _parsingLocation = sole();
+var _parsedFinal = sole();
 var _destroyed = sole();
 var _navigator = sole();
 var _matchRule = sole();
@@ -239,7 +244,11 @@ prop[_initPopstateEvent] = function () {
             return;
         }
 
-        the.emit('beforeChange', route);
+        if (the[_parsedFinal]) {
+            the.emit('beforeChange', route);
+        }
+
+        the[_parsedFinal] = false;
         var loc = the[_parsingLocation] = location.href;
         var state = getState();
         var pathname = route.pathname;
@@ -288,7 +297,10 @@ prop[_initPopstateEvent] = function () {
             }
 
             var end = function () {
-                the.emit('afterChange', route);
+                if (the[_parsedFinal]) {
+                    the.emit('afterChange', route);
+                }
+
                 the[_parsingLocation] = false;
             };
 
@@ -352,14 +364,17 @@ prop[_execDirector] = function (route, director, callback) {
 
         // 终点导航器
         if (director.final) {
+            the[_parsedFinal] = true;
             callback(true);
         }
         // 中间导航器
         else {
             if (typeis.String(controller)) {
+                the[_parsedFinal] = false;
                 the[_navigator].rewrite(controller);
                 callback(true);
             } else {
+                the[_parsedFinal] = true;
                 callback();
             }
         }
