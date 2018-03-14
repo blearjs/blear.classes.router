@@ -459,6 +459,44 @@ describe('测试文件', function () {
                 .serial(done);
         });
 
+        pipe('#match 中间件多次跳转模式', function (done) {
+            var router = new Router();
+            var aTimes = 0;
+            var bTimes = 0;
+            var beforeChangeTimes = 0;
+            var afterChangeTimes = 0;
+
+            router.match('/aaa', function (next) {
+                aTimes++;
+                next('/bbb');
+            }).match('/bbb', function () {
+                bTimes++;
+            });
+
+            router.on('beforeChange', function () {
+                beforeChangeTimes++;
+            }).on('afterChange', function () {
+                afterChangeTimes++;
+            });
+
+            plan
+                .task(function (next) {
+                    location.hash = '#/aaa';
+                    router.start();
+                    delay(next);
+                })
+                .task(function (next) {
+                    expect(location.hash).toBe('#/bbb');
+                    expect(aTimes).toBe(1);
+                    expect(bTimes).toBe(1);
+                    expect(beforeChangeTimes).toBe(1);
+                    expect(afterChangeTimes).toBe(1);
+                    router.destroy();
+                    delay(next);
+                })
+                .serial(done);
+        });
+
         pipe('小route #resolve', function (done) {
             var router = new Router();
             var ret = '';

@@ -67,9 +67,9 @@ var Router = Events.extend({
         // 是否正在解析状态，如果此时有新路由进入，则放弃该路由
         the[_parsingLocation]
             = the[_destroyed]
-            // 是否解析到终点
-            = the[_parsedFinal]
             = false;
+        // 是否解析到终点
+        the[_parsedFinal] = true;
         the[_navigator] = navigate(the[_options].mode, the[_options].split);
     },
 
