@@ -30,6 +30,7 @@ var STATE_TYPE_IS_REPLACE = 1;
 var STATE_TYPE_IS_POP = 2;
 var MODE_OF_HASH = 'hash';
 var MODE_OF_PATH = 'path';
+var anonymousRE = /.*/;
 var defaults = {
     /**
      * 是否忽略大小写，默认 false
@@ -105,7 +106,7 @@ var Router = Events.extend({
         var the = this;
 
         if (args.length === 1) {
-            the[_anonymousDirector] = wrapDirector(null, args[0], true);
+            the[_anonymousDirector] = wrapDirector(anonymousRE, args[0], true);
         } else {
             the[_namedDirectorList].push(wrapDirector(rule, loader, true));
         }
@@ -209,9 +210,10 @@ var _execDirector = sole();
 prop[_initAnonymousDirector] = function () {
     var the = this;
 
-    the[_anonymousDirector] = the[_anonymousDirector] || wrapDirector(null, function () {
+    the[_anonymousDirector] = the[_anonymousDirector] || wrapDirector(anonymousRE, function () {
         // ignore
-    });
+    }, true);
+    the[_namedDirectorList].push(the[_anonymousDirector]);
 };
 
 prop[_initPopstateEvent] = function () {
@@ -252,7 +254,6 @@ prop[_initPopstateEvent] = function () {
         var loc = the[_parsingLocation] = location.href;
         var state = getState();
         var pathname = route.pathname;
-        var matchedNamedDirectorList = [];
         // 这里用时间戳来判断，而不用 id，原因是：
         // id 是一个固定起始值，会与历史记录重复导致方向判断错误
         // 而时间戳是一个自增值，不会与历史记录重复
@@ -282,7 +283,8 @@ prop[_initPopstateEvent] = function () {
                 return;
             }
 
-            var matched = the[_matchRule](matchedNamedDirectorList, route, director);
+            // 根据路由与导航进行匹配
+            var matched = the[_matchRule](route, director);
 
             // 未匹配到
             if (!matched) {
@@ -296,19 +298,10 @@ prop[_initPopstateEvent] = function () {
                 return;
             }
 
-            var end = function () {
-                if (the[_parsedFinal]) {
-                    the.emit('afterChange', route);
-                }
+            the[_parsingLocation] = false;
 
-                the[_parsingLocation] = false;
-            };
-
-            // 因为 plan 是异步的
-            if (matchedNamedDirectorList.length) {
-                end();
-            } else {
-                the[_execDirector](route, the[_anonymousDirector], end);
+            if (the[_parsedFinal]) {
+                the.emit('afterChange', route);
             }
         });
     };
@@ -318,7 +311,7 @@ prop[_initPopstateEvent] = function () {
     });
 };
 
-prop[_matchRule] = function (matchedNamedDirectorList, route, director) {
+prop[_matchRule] = function (route, director) {
     var the = this;
     var options = the[_options];
     var matched = false;
@@ -343,10 +336,6 @@ prop[_matchRule] = function (matchedNamedDirectorList, route, director) {
                 }
                 break;
         }
-
-        if (matched) {
-            matchedNamedDirectorList.push(director);
-        }
     }
     // 匿名路径
     else {
@@ -358,6 +347,7 @@ prop[_matchRule] = function (matchedNamedDirectorList, route, director) {
 
 prop[_execDirector] = function (route, director, callback) {
     var the = this;
+    var controller = director.controller;
     var execController = function (controller) {
         director.controller = controller;
         route.controller = controller;
@@ -369,17 +359,16 @@ prop[_execDirector] = function (route, director, callback) {
         }
         // 中间导航器
         else {
+            the[_parsedFinal] = false;
+
             if (typeis.String(controller)) {
-                the[_parsedFinal] = false;
                 the[_navigator].rewrite(controller);
                 callback(true);
             } else {
-                the[_parsedFinal] = true;
                 callback();
             }
         }
     };
-    var controller = director.controller;
 
     route.rule = director.rule;
 
