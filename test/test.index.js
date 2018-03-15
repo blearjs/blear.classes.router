@@ -345,7 +345,7 @@ describe('测试文件', function () {
             var objA = {a: 'a'};
 
             router
-                .match('/', function () {
+                .get('/', function () {
                     route1 = this;
                     return objA;
                 });
@@ -432,6 +432,35 @@ describe('测试文件', function () {
                 .task(function (next) {
                     router.destroy();
                     expect(route1.controller).toBe(objA);
+                    delay(next);
+                })
+                .serial(done);
+        });
+
+        pipe('#loader 多次被使用', function (done) {
+            var router = new Router();
+            var objA = {};
+            var abcTimes = 0;
+
+            router.get('/abc/:abc', function (next) {
+                abcTimes++;
+                next(objA);
+            });
+
+            router.start();
+
+            plan
+                .task(function (next) {
+                    location.hash = '#/abc/123';
+                    delay(next);
+                })
+                .task(function (next) {
+                    location.hash = '#/abc/456';
+                    delay(next);
+                })
+                .task(function (next) {
+                    router.destroy();
+                    expect(abcTimes).toBe(1);
                     delay(next);
                 })
                 .serial(done);

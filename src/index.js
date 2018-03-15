@@ -293,11 +293,6 @@ prop[_initPopstateEvent] = function () {
 
             the[_execDirector](route, director, next);
         }).serial(function () {
-            // 如果此时路由监听已销毁，则不做任何后续处理
-            if (the[_destroyed]) {
-                return;
-            }
-
             the[_parsingLocation] = false;
 
             if (the[_parsedFinal]) {
