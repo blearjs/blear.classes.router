@@ -687,30 +687,6 @@ describe('测试文件', function () {
                 .serial(done);
         });
 
-        pipe('边界：同时间内只解析一次', function (done) {
-            var router = new Router();
-
-            router.match(function (next) {
-                setTimeout(function () {
-                    next();
-                }, 300);
-            });
-
-            router.start();
-
-            plan
-                .task(function (next) {
-                    expect(location.hash.replace('#', '')).toBe('');
-                    location.hash = '#/xxx';
-                    delay(next);
-                })
-                .task(function (next) {
-                    expect(location.hash.replace('#', '')).toBe('');
-                    router.destroy();
-                    delay(next);
-                }).serial(done);
-        });
-
         pipe('边界：匿名路由销毁之后才完成控制器加载', function (done) {
             var router = new Router();
             var beforeChangeTimes = 0;

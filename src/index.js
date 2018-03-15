@@ -219,19 +219,10 @@ prop[_initAnonymousDirector] = function () {
 prop[_initPopstateEvent] = function () {
     var the = this;
     var options = the[_options];
-    var isDrop = false;
 
     the[_parseStateByStateType] = function (stateType) {
-        // 如果是主动放弃的则不做任何处理，防止导航历史增长
-        if (isDrop) {
-            isDrop = false;
-            return;
-        }
-
         // 如果正在解析
         if (the[_parsingLocation]) {
-            isDrop = true;
-            history.back();
             return;
         }
 
