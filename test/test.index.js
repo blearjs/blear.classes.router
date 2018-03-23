@@ -526,6 +526,70 @@ describe('测试文件', function () {
                 .serial(done);
         });
 
+        pipe('#get 多次进入', function (done) {
+            var router = new Router();
+            var directionList = [];
+
+            router.get('/', function (next) {
+                next({});
+            });
+
+            router.on('afterChange', function (route) {
+                directionList.push(route.direction);
+            });
+            router.start();
+
+            plan
+                .task(function (next) {
+                    location.hash = '#/?a=1';
+                    delay(next);
+                })
+                .task(function (next) {
+                    router.destroy();
+                    expect(directionList.length).toBe(2);
+                    expect(directionList[0]).toBe('forward');
+                    expect(directionList[1]).toBe('replace');
+                    delay(next);
+                })
+                .serial(done);
+        });
+
+        pipe('#match 历史返回与前进 match 只会进一次', function (done) {
+            var router = new Router();
+            var abcTimes = 0;
+
+            router
+                .match('/abc', function (next) {
+                    abcTimes++;
+                    next();
+                })
+                .get('/abc', function () {
+
+                });
+
+            router.start();
+
+            plan
+                .task(function (next) {
+                    location.href = '#/abc';
+                    delay(next);
+                })
+                .task(function (next) {
+                    location.href = '#/def';
+                    delay(next);
+                })
+                .task(function (next) {
+                    history.back();
+                    delay(next);
+                })
+                .task(function (next) {
+                    router.destroy();
+                    expect(abcTimes).toBe(1);
+                    delay(next);
+                })
+                .serial(done);
+        });
+
         pipe('小route #resolve', function (done) {
             var router = new Router();
             var ret = '';

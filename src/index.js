@@ -19,6 +19,7 @@ var plan = require('blear.utils.plan');
 var url = require('blear.utils.url');
 var typeis = require('blear.utils.typeis');
 var event = require('blear.core.event');
+var hashbang = require('blear.core.hashbang');
 
 var Route = require('./route');
 var navigate = require('./navigate');
@@ -64,6 +65,7 @@ var Router = Events.extend({
         Router.parent(the);
         the[_options] = object.assign(true, {}, defaults, options);
         the[_namedDirectorList] = [];
+        the[_routeMap] = {};
         the[_anonymousDirector] = the[_previousRoute] = null;
         // 是否正在解析状态，如果此时有新路由进入，则放弃该路由
         the[_parsingLocation]
@@ -180,11 +182,16 @@ var Router = Events.extend({
     destroy: function () {
         var the = this;
 
-        if (the[_previousRoute]) {
-            the[_previousRoute].destroy();
-        }
-
-        the[_options] = the[_namedDirectorList] = the[_anonymousDirector] = the[_previousRoute] = null;
+        object.each(the[_routeMap], function (key, route) {
+            route.destroy();
+        });
+        the[_options]
+            = the[_namedDirectorList]
+            = the[_anonymousDirector]
+            = the[_previousRoute]
+            = the[_previousNavi]
+            = the[_routeMap]
+            = null;
         event.un(win, 'popstate', the[_onWindowPopstate]);
         the[_destroyed] = true;
         Router.invoke('destroy', the);
@@ -196,7 +203,10 @@ var _options = sole();
 var _namedDirectorList = sole();
 var _anonymousDirector = sole();
 var _previousRoute = sole();
+var _previousNavi = sole();
 var _initAnonymousDirector = sole();
+var _routeMap = sole();
+var _getRoute = sole();
 var _initPopstateEvent = sole();
 var _onWindowPopstate = sole();
 var _parseStateByStateType = sole();
@@ -216,6 +226,12 @@ prop[_initAnonymousDirector] = function () {
     the[_namedDirectorList].push(the[_anonymousDirector]);
 };
 
+prop[_getRoute] = function (key) {
+    var the = this;
+
+    return the[_routeMap][key] || (the[_routeMap][key] = new Route(the[_navigator]));
+};
+
 prop[_initPopstateEvent] = function () {
     var the = this;
     var options = the[_options];
@@ -226,23 +242,31 @@ prop[_initPopstateEvent] = function () {
             return;
         }
 
+        var prevNavi = the[_previousNavi];
+        var thisNavi = the[_navigator].parse();
+
+        // 如果路由没变化就不做任何处理
+        if (isSameNavi(prevNavi, thisNavi)) {
+            the.emit('repeat', prevNavi);
+            return;
+        }
+
         var previousRoute = the[_previousRoute];
         var previousState = previousRoute && previousRoute.state;
         var state = getState();
-        var route = Route.get(state.timestamp, the[_navigator]);
+        var route = the[_getRoute](state.timeStamp);
 
+        // 将 navi 信息复制过去
+        route.assign(thisNavi);
+        the[_previousNavi] = thisNavi;
+
+        // 终点路由解析
         if (the[_parsedFinal]) {
-            // 如果路由没变化就不做任何处理
-            if (isSameRoute(previousRoute, route)) {
-                the.emit('repeat', previousRoute);
-                return;
-            }
-
             the.emit('beforeChange', route);
         }
 
         // 历史路由，操作历史记录
-        if (route.controller) {
+        if (route.director) {
             the[_previousRoute] = route;
             return the.emit('afterChange', route);
         }
@@ -252,8 +276,8 @@ prop[_initPopstateEvent] = function () {
         // id 是一个固定起始值，会与历史记录重复导致方向判断错误
         // 而时间戳是一个自增值，不会与历史记录重复
         var direction = state && previousState &&
-        state.timestamp && previousState.timestamp &&
-        state.timestamp < previousState.timestamp ? 'backward' : 'forward';
+        state.timeStamp && previousState.timeStamp &&
+        state.timeStamp < previousState.timeStamp ? 'backward' : 'forward';
         var pathname = route.pathname;
 
         if (previousRoute && previousRoute.pathname === pathname) {
@@ -261,7 +285,7 @@ prop[_initPopstateEvent] = function () {
         }
 
         the[_parsedFinal] = false;
-        route.assign({
+        route.assign(   {
             direction: direction,
             state: state,
             location: loc
@@ -333,13 +357,15 @@ prop[_matchRule] = function (route, director) {
 
 prop[_execDirector] = function (route, director, callback) {
     var the = this;
-    var controller = director.controller;
     var execController = function (controller) {
-        director.controller = controller;
-        route.controller = controller;
+        // route.controller = controller;
+        // route.director = director;
+        director.loaded = true;
 
         // 终点导航器
         if (director.final) {
+            route.director = director;
+            route.controller = director.controller = controller;
             the[_parsedFinal] = true;
             callback(true);
         }
@@ -358,8 +384,8 @@ prop[_execDirector] = function (route, director, callback) {
 
     route.rule = director.rule;
 
-    if (controller) {
-        execController(controller);
+    if (director.loaded) {
+        execController(director.controller);
     } else {
         director.loader.call(route, execController);
     }
@@ -371,17 +397,17 @@ module.exports = Router;
 // ==================================================================
 /**
  * 下一个 state
- * @returns {{timestamp: number}}
+ * @returns {{timeStamp: number}}
  */
 function nextState() {
     return {
-        timestamp: Date.now()
+        timeStamp: Date.now()
     };
 }
 
 /**
  * 获取当前 state
- * @returns {{id: number, timeStamp: number, timestamp: number}}
+ * @returns {{id: number, timeStamp: number, timeStamp: number}}
  */
 function getState() {
     return nativeHistory.state || nextState();
@@ -394,7 +420,7 @@ var directorId = 0;
  * @param rule1
  * @param loader1
  * @param [final=false]
- * @returns {{loader: *, rule: *, async: boolean, final: boolean}}
+ * @returns {{loader: *, loaded: boolean, rule: *, async: boolean, final: boolean}}
  */
 function wrapDirector(rule1, loader1, final) {
     var async = false;
@@ -422,6 +448,7 @@ function wrapDirector(rule1, loader1, final) {
     return {
         id: directorId++,
         loader: loader2,
+        loaded: false,
         final: final || false,
         rule: rule1,
         async: async
@@ -434,7 +461,7 @@ function wrapDirector(rule1, loader1, final) {
  * @param b
  * @returns {boolean}
  */
-function isSameRoute(a, b) {
+function isSameNavi(a, b) {
     if (!a) {
         return false;
     }

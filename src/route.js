@@ -9,7 +9,6 @@
 'use strict';
 
 var Class = require('blear.classes.class');
-var hashbang = require('blear.core.hashbang');
 var object = require('blear.utils.object');
 var time = require('blear.utils.time');
 var url = require('blear.utils.url');
@@ -17,7 +16,6 @@ var url = require('blear.utils.url');
 var nextTick = time.nextTick;
 var routeId = 0;
 
-var routeMap = {};
 var Route = Class.extend({
     className: 'Route',
     constructor: function (navigator) {
@@ -26,7 +24,6 @@ var Route = Class.extend({
         Route.parent(the);
         the[_navigator] = navigator;
         the.id = routeId++;
-        object.assign(the, hashbang.parse());
     },
 
     /**
@@ -88,9 +85,5 @@ var Route = Class.extend({
 });
 var sole = Route.sole;
 var _navigator = sole();
-
-Route.get = function (key, navigator) {
-    return routeMap[key] || (routeMap[key] = new Route(navigator));
-};
 
 module.exports = Route;

@@ -21,6 +21,13 @@ module.exports = function (mode, split) {
     var isHashMode = mode === MODE_OF_HASH;
     return {
         /**
+         * 解析当前路由
+         * @returns {{href, base, protocol, host, hostname, port, pathname, search, hash, hashstring, querystring, query, origin, statical}}
+         */
+        parse: function () {
+              return isHashMode ? hashbang.parse() : url.parse(location.href);
+        },
+        /**
          * 解决新路径
          * @param to
          * @returns {String}
