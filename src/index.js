@@ -228,46 +228,45 @@ prop[_initPopstateEvent] = function () {
 
         var previousRoute = the[_previousRoute];
         var previousState = previousRoute && previousRoute.state;
-        var route = new Route(the[_navigator]);
-
-        // 如果路由没变化就不做任何处理
-        if (isSameRoute(previousRoute, route)) {
-            route.destroy();
-            the.emit('repeat', previousRoute);
-            return;
-        }
+        var state = getState();
+        var route = Route.get(state.timestamp, the[_navigator]);
 
         if (the[_parsedFinal]) {
+            // 如果路由没变化就不做任何处理
+            if (isSameRoute(previousRoute, route)) {
+                the.emit('repeat', previousRoute);
+                return;
+            }
+
             the.emit('beforeChange', route);
         }
 
-        the[_parsedFinal] = false;
+        // 历史路由，操作历史记录
+        if (route.controller) {
+            the[_previousRoute] = route;
+            return the.emit('afterChange', route);
+        }
+
         var loc = the[_parsingLocation] = location.href;
-        var state = getState();
-        var pathname = route.pathname;
         // 这里用时间戳来判断，而不用 id，原因是：
         // id 是一个固定起始值，会与历史记录重复导致方向判断错误
         // 而时间戳是一个自增值，不会与历史记录重复
         var direction = state && previousState &&
         state.timestamp && previousState.timestamp &&
         state.timestamp < previousState.timestamp ? 'backward' : 'forward';
+        var pathname = route.pathname;
 
         if (previousRoute && previousRoute.pathname === pathname) {
             direction = 'replace';
         }
 
+        the[_parsedFinal] = false;
         route.assign({
             direction: direction,
             state: state,
             location: loc
         });
         nativeHistory.replaceState(state, null, loc);
-        the[_previousRoute] = route;
-
-        if (the[_previousRoute]) {
-            the[_previousRoute].destroy();
-        }
-
         plan.each(the[_namedDirectorList], function (index, director, next) {
             // 如果此时路由监听已销毁，则不做任何后续处理
             if (the[_destroyed]) {
@@ -287,6 +286,7 @@ prop[_initPopstateEvent] = function () {
             the[_parsingLocation] = false;
 
             if (the[_parsedFinal]) {
+                the[_previousRoute] = route;
                 the.emit('afterChange', route);
             }
         });

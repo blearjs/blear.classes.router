@@ -17,6 +17,7 @@ var url = require('blear.utils.url');
 var nextTick = time.nextTick;
 var routeId = 0;
 
+var routeMap = {};
 var Route = Class.extend({
     className: 'Route',
     constructor: function (navigator) {
@@ -87,5 +88,9 @@ var Route = Class.extend({
 });
 var sole = Route.sole;
 var _navigator = sole();
+
+Route.get = function (key, navigator) {
+    return routeMap[key] || (routeMap[key] = new Route(navigator));
+};
 
 module.exports = Route;
