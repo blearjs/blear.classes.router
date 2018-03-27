@@ -261,7 +261,7 @@ prop[_initPopstateEvent] = function () {
         route.assign(thisNavi);
         the[_previousNavi] = thisNavi;
 
-        // 终点路由解析
+        // 终点路由解析，保证事件只触发一次
         if (the[_parsedFinal]) {
             the.emit('beforeChange', route);
         }
@@ -270,6 +270,11 @@ prop[_initPopstateEvent] = function () {
         if (route.director) {
             the[_previousRoute] = route;
             return the.emit('afterChange', route);
+        }
+
+        // 终点路由解析，保证事件只触发一次
+        if (the[_parsedFinal]) {
+            the.emit('beforeLoad', route);
         }
 
         var loc = the[_parsingLocation] = location.href;
@@ -310,9 +315,11 @@ prop[_initPopstateEvent] = function () {
         }).serial(function () {
             the[_parsingLocation] = false;
 
+            // 终点路由解析，保证事件只触发一次
             if (the[_parsedFinal]) {
                 the[_previousRoute] = route;
                 the.emit('afterChange', route);
+                the.emit('afterLoad', route);
             }
         });
     };
