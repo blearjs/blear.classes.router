@@ -31,7 +31,7 @@ describe('测试文件', function () {
             });
         };
 
-        pipe('event', function (done) {
+        pipe('event: change', function (done) {
             var beforeTimes = 0;
             var afterTimes = 0;
             var router = new Router();
@@ -45,6 +45,46 @@ describe('测试文件', function () {
             });
 
             router.start();
+
+            plan
+                .task(function (next) {
+                    location.hash = '#/a';
+                    delay(next);
+                })
+                .task(function (next) {
+                    location.hash = '#/b';
+                    delay(next);
+                })
+                .task(function (next) {
+                    router.destroy();
+                    delay(next);
+                })
+                .task(function (next) {
+                    expect(beforeTimes).toEqual(3);
+                    expect(afterTimes).toEqual(3);
+                    expect(location.hash).toEqual('#/b');
+                    delay(next);
+                })
+                .serial(done);
+        });
+
+        pipe('event: load', function (done) {
+            var beforeTimes = 0;
+            var afterTimes = 0;
+            var router = new Router();
+
+            router.on('beforeLoad', function () {
+                beforeTimes++;
+            });
+
+            router.on('afterLoad', function () {
+                afterTimes++;
+            });
+
+            router.match(function (next) {
+                beforeTimes++;
+                next();
+            }).start();
 
             plan
                 .task(function (next) {

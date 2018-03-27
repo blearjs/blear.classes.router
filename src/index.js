@@ -70,10 +70,13 @@ var Router = Events.extend({
         the[_anonymousDirector] = the[_previousRoute] = null;
         // 是否正在解析状态，如果此时有新路由进入，则放弃该路由
         the[_parsingLocation]
+            // 是否正在加载导航器
+            = the[_loadingDirector]
             = the[_destroyed]
             = false;
         // 是否解析到终点
-        the[_parsedFinal] = true;
+        the[_parsedFinal]
+            = true;
         the[_navigator] = navigate(the[_options].mode, the[_options].split);
     },
 
@@ -217,6 +220,7 @@ var _destroyed = sole();
 var _navigator = sole();
 var _matchRule = sole();
 var _execDirector = sole();
+var _loadingDirector = sole();
 
 prop[_initAnonymousDirector] = function () {
     var the = this;
@@ -272,11 +276,6 @@ prop[_initPopstateEvent] = function () {
             return the.emit('afterChange', route);
         }
 
-        // 终点路由解析，保证事件只触发一次
-        if (the[_parsedFinal]) {
-            the.emit('beforeLoad', route);
-        }
-
         var loc = the[_parsingLocation] = location.href;
         // 这里用时间戳来判断，而不用 id，原因是：
         // id 是一个固定起始值，会与历史记录重复导致方向判断错误
@@ -291,7 +290,7 @@ prop[_initPopstateEvent] = function () {
         }
 
         the[_parsedFinal] = false;
-        route.assign(   {
+        route.assign({
             direction: direction,
             state: state,
             location: loc
@@ -319,7 +318,6 @@ prop[_initPopstateEvent] = function () {
             if (the[_parsedFinal]) {
                 the[_previousRoute] = route;
                 the.emit('afterChange', route);
-                the.emit('afterLoad', route);
             }
         });
     };
@@ -366,12 +364,15 @@ prop[_matchRule] = function (route, director) {
 prop[_execDirector] = function (route, director, callback) {
     var the = this;
     var execController = function (controller) {
-        // route.controller = controller;
-        // route.director = director;
         director.loaded = true;
 
         // 终点导航器
         if (director.final) {
+            if (the[_loadingDirector]) {
+                the[_loadingDirector] = false;
+                the.emit('afterLoad');
+            }
+
             route.director = director;
             route.controller = director.controller = controller;
             the[_parsedFinal] = true;
@@ -395,6 +396,11 @@ prop[_execDirector] = function (route, director, callback) {
     if (director.loaded) {
         execController(director.controller);
     } else {
+        if (!the[_loadingDirector]) {
+            the[_loadingDirector] = true;
+            the.emit('beforeLoad');
+        }
+
         director.loader.call(route, execController);
     }
 };
