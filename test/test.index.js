@@ -31,7 +31,7 @@ describe('测试文件', function () {
             });
         };
 
-        pipe('event: change', function (done) {
+        pipe('event: change 路由变化前后都会触发', function (done) {
             var beforeTimes = 0;
             var afterTimes = 0;
             var router = new Router();
@@ -68,7 +68,7 @@ describe('测试文件', function () {
                 .serial(done);
         });
 
-        pipe('event: load', function (done) {
+        pipe('event: load 同一个 director 只加载一次', function (done) {
             var beforeTimes = 0;
             var afterTimes = 0;
             var router = new Router();
@@ -82,17 +82,25 @@ describe('测试文件', function () {
             });
 
             router.match(function (next) {
-                beforeTimes++;
+                next();
+            }).match('/', function (next) {
+                next();
+            }).get('/', function (next) {
+                next();
+            }).get('/a', function (next) {
                 next();
             }).start();
 
             plan
                 .task(function (next) {
+                    delay(next);
+                })
+                .task(function (next) {
                     location.hash = '#/a';
                     delay(next);
                 })
                 .task(function (next) {
-                    location.hash = '#/b';
+                    history.back();
                     delay(next);
                 })
                 .task(function (next) {
@@ -100,9 +108,8 @@ describe('测试文件', function () {
                     delay(next);
                 })
                 .task(function (next) {
-                    expect(beforeTimes).toEqual(3);
-                    expect(afterTimes).toEqual(3);
-                    expect(location.hash).toEqual('#/b');
+                    expect(beforeTimes).toEqual(2);
+                    expect(afterTimes).toEqual(2);
                     delay(next);
                 })
                 .serial(done);
