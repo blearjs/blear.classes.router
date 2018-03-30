@@ -364,8 +364,6 @@ prop[_matchRule] = function (route, director) {
 prop[_execDirector] = function (route, director, callback) {
     var the = this;
     var execController = function (controller) {
-        director.loaded = true;
-
         // 终点导航器
         if (director.final) {
             if (the[_loadingDirector]) {
@@ -373,6 +371,7 @@ prop[_execDirector] = function (route, director, callback) {
                 the.emit('afterLoad');
             }
 
+            director.loaded = true;
             route.director = director;
             route.controller = director.controller = controller;
             the[_parsedFinal] = true;
