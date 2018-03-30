@@ -38,7 +38,10 @@ router
     //     })
 
     // 具名路由
-    .match('/user/abc/:abc1', function (next) {
+    .match({
+        path: '/user/abc/:abc1',
+        meta: {a: 1}
+    }, function (next) {
         console.log('1 start', 'params.abc1 =', this.params.abc1);
         next();
     })
@@ -54,30 +57,33 @@ router
         console.log('4');
         next('./12345');
     })
-    .get('/user/abc/12345', function (next) {
+    .get({
+        path: '/user/abc/12345',
+        meta: {b: 2}
+    }, function (next) {
         console.log('5 end');
 
         setTimeout(function () {
             next({});
         });
     })
-    // .match({
-    //     path: '/user/abc/123',
-    //     meta: {a: 1}
-    // }, function () {
-    //     console.log('永不会执行');
-    // })
+    .match({
+        path: '/user/abc/123',
+        meta: {c: 3}
+    }, function () {
+        console.log('永不会执行');
+    })
 
-    // .match({
-    //     path: '/user/def/456',
-    //     meta: {b: 2}
-    // }, function (next) {
-    //     console.log('1 start');
-    //
-    //     setTimeout(function () {
-    //         next();
-    //     }, 500);
-    // })
+    .match({
+        path: '/user/def/456',
+        meta: {a: 4}
+    }, function (next) {
+        console.log('1 start');
+
+        setTimeout(function () {
+            next();
+        }, 500);
+    })
     .get('/user/def/456', function (next) {
         console.log('2');
         require.async('./async/def.js', next);
@@ -116,9 +122,10 @@ router
     });
 
 router.on('afterChange', function (route) {
-    // if (route.meta.a) {
-    //
-    // }
+    if (route.meta.a) {
+        console.log('当前路由有 meta.a 属性');
+    }
+
     if (route.match('/user/abc/12345')) {
         console.log('route matched', route.rule)
     }

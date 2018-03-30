@@ -328,6 +328,8 @@ prop[_initPopstateEvent] = function () {
 prop[_execDirector] = function (route, director, callback) {
     var the = this;
     var execController = function (controller) {
+        object.assign(route.meta, director.meta);
+
         // 终点导航器
         if (director.final) {
             if (the[_loadingDirector]) {
@@ -402,6 +404,13 @@ var directorId = 0;
 function wrapDirector(path1, loader1, final) {
     var async = false;
     var loader2 = null;
+    var path2 = path1;
+    var meta = null;
+
+    if (typeis.Object(path2)) {
+        path2 = path1.path;
+        meta = path1.meta;
+    }
 
     // 通过回调函数的参数个数来与判断路由回调类型
     // 异步控制器
@@ -427,8 +436,9 @@ function wrapDirector(path1, loader1, final) {
         loader: loader2,
         loaded: false,
         final: final || false,
-        path: path1,
-        async: async
+        path: path2,
+        async: async,
+        meta: meta
     };
 }
 
