@@ -28,6 +28,7 @@ var Route = Class.extend({
         the[_strict] = strict;
         the[_ignoreCase] = ignoreCase;
         the.id = routeId++;
+        the.meta = {};
     },
 
     /**
