@@ -80,39 +80,39 @@ var Router = Events.extend({
 
     /**
      * 中间路由匹配
-     * @param [rule]
+     * @param [path]
      * @param loader
      * @returns {Router}
      */
-    match: function (rule, loader) {
+    match: function (path, loader) {
         var args = access.args(arguments);
         var the = this;
-        var rule2 = args[0];
+        var path2 = args[0];
         var loader2 = args[1];
 
         if (args.length === 1) {
             loader2 = args[0];
-            rule2 = null;
+            path2 = null;
         }
 
-        the[_namedDirectorList].push(wrapDirector(rule2, loader2));
+        the[_namedDirectorList].push(wrapDirector(path2, loader2));
         return the;
     },
 
     /**
      * 终点路由匹配
-     * @param [rule]
+     * @param [path]
      * @param loader
      * @returns {Router}
      */
-    get: function (rule, loader) {
+    get: function (path, loader) {
         var args = access.args(arguments);
         var the = this;
 
         if (args.length === 1) {
             the[_anonymousDirector] = wrapDirector(anonymousRE, args[0], true);
         } else {
-            the[_namedDirectorList].push(wrapDirector(rule, loader, true));
+            the[_namedDirectorList].push(wrapDirector(path, loader, true));
         }
 
         return the;
@@ -300,7 +300,7 @@ prop[_initPopstateEvent] = function () {
             }
 
             // 根据路由与导航进行匹配
-            var matched = route.match(director.rule);
+            var matched = route.match(director.path);
             route.params = matched;
 
             // 未匹配到
@@ -354,7 +354,7 @@ prop[_execDirector] = function (route, director, callback) {
         }
     };
 
-    route.rule = director.rule;
+    route.path = director.path;
 
     if (director.loaded) {
         execController(director.controller);
@@ -394,12 +394,12 @@ var directorId = 0;
 
 /**
  * 包装导航器
- * @param rule1
+ * @param path1
  * @param loader1
  * @param [final=false]
- * @returns {{loader: *, loaded: boolean, rule: *, async: boolean, final: boolean}}
+ * @returns {{loader: *, loaded: boolean, path: *, async: boolean, final: boolean}}
  */
-function wrapDirector(rule1, loader1, final) {
+function wrapDirector(path1, loader1, final) {
     var async = false;
     var loader2 = null;
 
@@ -427,7 +427,7 @@ function wrapDirector(rule1, loader1, final) {
         loader: loader2,
         loaded: false,
         final: final || false,
-        rule: rule1,
+        path: path1,
         async: async
     };
 }
