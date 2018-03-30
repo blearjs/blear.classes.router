@@ -267,13 +267,13 @@ prop[_initPopstateEvent] = function () {
 
         // 终点路由解析，保证事件只触发一次
         if (the[_parsedFinal]) {
-            the.emit('beforeChange', route);
+            the.emit('beforeChange', route, previousRoute);
         }
 
         // 历史路由，操作历史记录
         if (route.director) {
             the[_previousRoute] = route;
-            return the.emit('afterChange', route);
+            return the.emit('afterChange', route, previousRoute);
         }
 
         var loc = the[_parsingLocation] = location.href;
@@ -317,7 +317,7 @@ prop[_initPopstateEvent] = function () {
             // 终点路由解析，保证事件只触发一次
             if (the[_parsedFinal]) {
                 the[_previousRoute] = route;
-                the.emit('afterChange', route);
+                the.emit('afterChange', route, previousRoute);
             }
         });
     };
