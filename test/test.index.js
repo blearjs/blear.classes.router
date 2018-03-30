@@ -806,6 +806,133 @@ describe('测试文件', function () {
                 .serial(done);
         });
 
+        pipe('小route #match 字符串', function (done) {
+            var router = new Router();
+            var matched = null;
+
+            router.start();
+
+            router.on('afterChange', function (route) {
+                // /
+                // /
+                // => {}
+                matched = route.match('/');
+            });
+
+            plan
+                .task(function (next) {
+                    router.destroy();
+                    delay(next);
+                })
+                .task(function (next) {
+                    expect(matched).toEqual({});
+                    next();
+                })
+                .serial(done);
+        });
+
+        pipe('小route #match 正则', function (done) {
+            var router = new Router();
+            var matched = null;
+
+            router.start();
+
+            router.on('afterChange', function (route) {
+                // url /abc/def/hh
+                // path /^/([^/]+)\//([^/]+)\/.*$/
+                // => [abc, def]
+                matched = route.match(/^\/$/);
+            });
+
+            plan
+                .task(function (next) {
+                    router.destroy();
+                    delay(next);
+                })
+                .task(function (next) {
+                    expect(matched).toEqual(['/']);
+                    next();
+                })
+                .serial(done);
+        });
+
+        pipe('小route #match 空', function (done) {
+            var router = new Router();
+            var matched = null;
+
+            router.start();
+
+            router.on('afterChange', function (route) {
+                // url /abc/def/hh
+                // path /^/([^/]+)\//([^/]+)\/.*$/
+                // => [abc, def]
+                matched = route.match();
+            });
+
+            plan
+                .task(function (next) {
+                    router.destroy();
+                    delay(next);
+                })
+                .task(function (next) {
+                    expect(matched).toEqual(true);
+                    next();
+                })
+                .serial(done);
+        });
+
+        pipe('小route 单个 meta', function (done) {
+            var router = new Router();
+            var meta = null;
+
+            router.match({meta: {a: 1}}, function () {
+
+            }).start();
+
+            router.on('afterChange', function (route) {
+                meta = route.meta;
+            });
+
+            plan
+                .task(function (next) {
+                    router.destroy();
+                    delay(next);
+                })
+                .task(function (next) {
+                    expect(meta.a).toEqual(1);
+                    next();
+                })
+                .serial(done);
+        });
+
+        pipe('小route 多个 meta', function (done) {
+            var router = new Router();
+            var meta = null;
+
+            router.match({meta: {a: 1, c: 4}}, function () {
+
+            }).match({meta: {a: 2, b: 3}}, function () {
+
+            }).start();
+
+            router.on('afterChange', function (route) {
+                meta = route.meta;
+            });
+
+            plan
+                .task(function (next) {
+                    router.destroy();
+                    delay(next);
+                })
+                .task(function (next) {
+                    expect(meta.a).toEqual(2);
+                    expect(meta.b).toEqual(3);
+                    expect(meta.c).toEqual(4);
+                    next();
+                })
+                .serial(done);
+        });
+
         pipe('边界：相同路由只触发一次', function (done) {
             var router = new Router();
             var changeTimes = 0;
