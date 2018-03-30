@@ -12,17 +12,21 @@ var Class = require('blear.classes.class');
 var object = require('blear.utils.object');
 var time = require('blear.utils.time');
 var url = require('blear.utils.url');
+var array = require('blear.utils.array');
+var typeis = require('blear.utils.typeis');
 
 var nextTick = time.nextTick;
 var routeId = 0;
 
 var Route = Class.extend({
     className: 'Route',
-    constructor: function (navigator) {
+    constructor: function (navigator, strict, ignoreCase) {
         var the = this;
 
         Route.parent(the);
         the[_navigator] = navigator;
+        the[_strict] = strict;
+        the[_ignoreCase] = ignoreCase;
         the.id = routeId++;
     },
 
@@ -77,6 +81,43 @@ var Route = Class.extend({
     },
 
     /**
+     * 匹配路径
+     * @param path
+     * @returns {boolean|object|array}
+     */
+    match: function (path) {
+        var the = this;
+        var matched = false;
+        var pathname = the.pathname;
+
+        // 具名路径
+        if (path) {
+            switch (typeis(path)) {
+                case 'string':
+                    matched = url.matchPath(pathname, path, {
+                        strict: the[_strict],
+                        ignoreCase: the[_ignoreCase]
+                    });
+                    break;
+
+                case 'regexp':
+                    var matches = pathname.match(path);
+
+                    if (matches) {
+                        matched = array.from(matches);
+                    }
+                    break;
+            }
+        }
+        // 匿名路径
+        else {
+            matched = true;
+        }
+
+        return matched;
+    },
+
+    /**
      * 销毁
      */
     destroy: function () {
@@ -85,5 +126,7 @@ var Route = Class.extend({
 });
 var sole = Route.sole;
 var _navigator = sole();
+var _strict = sole();
+var _ignoreCase = sole();
 
 module.exports = Route;

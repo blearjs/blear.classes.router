@@ -17,10 +17,8 @@ var array = require('blear.utils.array');
 var object = require('blear.utils.object');
 var qs = require('blear.utils.querystring');
 var plan = require('blear.utils.plan');
-var url = require('blear.utils.url');
 var typeis = require('blear.utils.typeis');
 var event = require('blear.core.event');
-var hashbang = require('blear.core.hashbang');
 
 var Route = require('./route');
 var navigate = require('./navigate');
@@ -218,7 +216,6 @@ var _parsingLocation = sole();
 var _parsedFinal = sole();
 var _destroyed = sole();
 var _navigator = sole();
-var _matchRule = sole();
 var _execDirector = sole();
 var _loadingDirector = sole();
 
@@ -233,8 +230,9 @@ prop[_initAnonymousDirector] = function () {
 
 prop[_getRoute] = function (key) {
     var the = this;
+    var options = the[_options];
 
-    return the[_routeMap][key] || (the[_routeMap][key] = new Route(the[_navigator]));
+    return the[_routeMap][key] || (the[_routeMap][key] = new Route(the[_navigator], options.strict, options.ignoreCase));
 };
 
 prop[_initPopstateEvent] = function () {
@@ -302,7 +300,8 @@ prop[_initPopstateEvent] = function () {
             }
 
             // 根据路由与导航进行匹配
-            var matched = the[_matchRule](route, director);
+            var matched = route.match(director.rule);
+            route.params = matched;
 
             // 未匹配到
             if (!matched) {
@@ -324,40 +323,6 @@ prop[_initPopstateEvent] = function () {
     event.on(win, 'popstate', the[_onWindowPopstate] = function (ev) {
         the[_parseStateByStateType](STATE_TYPE_IS_POP);
     });
-};
-
-prop[_matchRule] = function (route, director) {
-    var the = this;
-    var options = the[_options];
-    var matched = false;
-    var rule = director.rule;
-    var pathname = route.pathname;
-
-    // 具名路径
-    if (rule) {
-        switch (typeis(rule)) {
-            case 'string':
-                matched = route.params = url.matchPath(pathname, rule, {
-                    strict: options.strict,
-                    ignoreCase: options.ignoreCase
-                });
-                break;
-
-            case 'regexp':
-                var matches = pathname.match(rule);
-
-                if (matches) {
-                    matched = route.params = array.from(matches);
-                }
-                break;
-        }
-    }
-    // 匿名路径
-    else {
-        matched = true;
-    }
-
-    return matched;
 };
 
 prop[_execDirector] = function (route, director, callback) {

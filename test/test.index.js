@@ -637,6 +637,41 @@ describe('测试文件', function () {
                 .serial(done);
         });
 
+        pipe('#match 一直都会执行', function (done) {
+            var router = new Router();
+            var executedTimes = 0;
+
+            router.match(function () {
+                executedTimes++;
+            });
+
+            router.start();
+
+            plan
+                .task(function (next) {
+                    location.hash = '#/a';
+                    delay(next);
+                })
+                .task(function (next) {
+                    location.hash = '#/b';
+                    delay(next);
+                })
+                .task(function (next) {
+                    history.back();
+                    delay(next);
+                })
+                .task(function (next) {
+                    history.forward();
+                    delay(next);
+                })
+                .task(function (next) {
+                    router.destroy();
+                    expect(executedTimes).toBe(3);
+                    next();
+                })
+                .serial(done);
+        });
+
         pipe('小route #resolve', function (done) {
             var router = new Router();
             var ret = '';

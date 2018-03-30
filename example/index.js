@@ -61,17 +61,23 @@ router
             next({});
         });
     })
-    .match('/user/abc/123', function () {
-        console.log('永不会执行');
-    })
+    // .match({
+    //     path: '/user/abc/123',
+    //     meta: {a: 1}
+    // }, function () {
+    //     console.log('永不会执行');
+    // })
 
-    .match('/user/def/456', function (next) {
-        console.log('1 start');
-
-        setTimeout(function () {
-            next();
-        }, 500);
-    })
+    // .match({
+    //     path: '/user/def/456',
+    //     meta: {b: 2}
+    // }, function (next) {
+    //     console.log('1 start');
+    //
+    //     setTimeout(function () {
+    //         next();
+    //     }, 500);
+    // })
     .get('/user/def/456', function (next) {
         console.log('2');
         require.async('./async/def.js', next);
@@ -108,6 +114,15 @@ router
     .get(function () {
         console.log('load 404');
     });
+
+router.on('afterChange', function (route) {
+    // if (route.meta.a) {
+    //
+    // }
+    if (route.match('/user/abc/12345')) {
+        console.log('route matched', route.rule)
+    }
+});
 
 document.getElementById('rewrite').onclick = function () {
     router.setQuery('r', Math.random());
