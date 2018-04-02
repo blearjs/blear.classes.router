@@ -328,8 +328,6 @@ prop[_initPopstateEvent] = function () {
 prop[_execDirector] = function (route, director, callback) {
     var the = this;
     var execController = function (controller) {
-        object.assign(route.meta, director.meta);
-
         // 终点导航器
         if (director.final) {
             if (the[_loadingDirector]) {
@@ -357,6 +355,7 @@ prop[_execDirector] = function (route, director, callback) {
     };
 
     route.path = director.path;
+    object.assign(route.meta, director.meta);
 
     if (director.loaded) {
         execController(director.controller);
