@@ -218,6 +218,7 @@ var _destroyed = sole();
 var _navigator = sole();
 var _execDirector = sole();
 var _loadingDirector = sole();
+var _afterChange = sole();
 
 prop[_initAnonymousDirector] = function () {
     var the = this;
@@ -254,10 +255,9 @@ prop[_initPopstateEvent] = function () {
             return;
         }
 
-        var previousRoute = the[_previousRoute];
-        var previousState = previousRoute && previousRoute.state;
         var state = getState();
         var route = the[_getRoute](state.timeStamp);
+        var loc = location.href;
 
         // 将 navi 信息复制过去
         route.assign(thisNavi);
@@ -265,30 +265,16 @@ prop[_initPopstateEvent] = function () {
 
         // 终点路由解析，保证事件只触发一次
         if (the[_parsedFinal]) {
-            the.emit('beforeChange', route, previousRoute);
+            the.emit('beforeChange', route, the[_previousRoute]);
         }
 
         // 历史路由，操作历史记录
         if (route.director) {
-            the[_previousRoute] = route;
-            return the.emit('afterChange', route, previousRoute);
+            return the[_afterChange](route);
         }
 
-        var loc = the[_parsingLocation] = location.href;
-        // 这里用时间戳来判断，而不用 id，原因是：
-        // id 是一个固定起始值，会与历史记录重复导致方向判断错误
-        // 而时间戳是一个自增值，不会与历史记录重复
-        var direction = state && previousState &&
-        state.timeStamp && previousState.timeStamp &&
-        state.timeStamp < previousState.timeStamp ? 'backward' : 'forward';
-        var pathname = route.pathname;
-
-        if (previousRoute && previousRoute.pathname === pathname) {
-            direction = 'replace';
-        }
-
+        the[_parsingLocation] = loc;
         route.assign({
-            direction: direction,
             state: state,
             location: loc
         });
@@ -314,8 +300,7 @@ prop[_initPopstateEvent] = function () {
 
             // 终点路由解析，保证事件只触发一次
             if (the[_parsedFinal]) {
-                the[_previousRoute] = route;
-                the.emit('afterChange', route, previousRoute);
+                the[_afterChange](route);
             }
         });
     };
@@ -367,6 +352,33 @@ prop[_execDirector] = function (route, director, callback) {
 
         director.loader.call(route, execController);
     }
+};
+
+
+prop[_afterChange] = function (route) {
+    var the = this;
+    var previousRoute = the[_previousRoute];
+    var previousState = previousRoute && previousRoute.state;
+    var state = route.state;
+    // 这里用时间戳来判断，而不用 id，原因是：
+    // id 是一个固定起始值，会与历史记录重复导致方向判断错误
+    // 而时间戳是一个自增值，不会与历史记录重复
+    var direction = state && previousState &&
+    state.timeStamp && previousState.timeStamp &&
+    state.timeStamp < previousState.timeStamp ? 'back' : 'forward';
+    var pathname = route.pathname;
+
+    if (previousRoute && previousRoute.pathname === pathname) {
+        direction = 'replace';
+    }
+
+    if (previousRoute) {
+        previousRoute.direction = direction;
+    }
+
+    route.direction = direction;
+    the.emit('afterChange', route, the[_previousRoute]);
+    the[_previousRoute] = route;
 };
 
 Router.defaults = defaults;

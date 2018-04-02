@@ -672,7 +672,7 @@ describe('测试文件', function () {
                 .serial(done);
         });
 
-        pipe('小route #resolve', function (done) {
+        pipe('小 route #resolve', function (done) {
             var router = new Router();
             var ret = '';
 
@@ -695,7 +695,7 @@ describe('测试文件', function () {
                 .serial(done);
         });
 
-        pipe('小route #redirect', function (done) {
+        pipe('小 route #redirect', function (done) {
             var router = new Router();
 
             router.match('/a/b/c/d', function () {
@@ -721,7 +721,7 @@ describe('测试文件', function () {
                 }).serial(done);
         });
 
-        pipe('小route #rewrite', function (done) {
+        pipe('小 route #rewrite', function (done) {
             var router = new Router();
 
             router.match('/a/b/c/d', function () {
@@ -748,7 +748,7 @@ describe('测试文件', function () {
                 .serial(done);
         });
 
-        pipe('小route #setQuery', function (done) {
+        pipe('小 route #setQuery', function (done) {
             var router = new Router();
 
             router.match('/a/b/c/d', function () {
@@ -779,7 +779,7 @@ describe('测试文件', function () {
                 .serial(done);
         });
 
-        pipe('小route #removeQuery', function (done) {
+        pipe('小 route #removeQuery', function (done) {
             var router = new Router();
 
             router.match('/a/b/c/d', function () {
@@ -806,7 +806,7 @@ describe('测试文件', function () {
                 .serial(done);
         });
 
-        pipe('小route #match 字符串', function (done) {
+        pipe('小 route #match 字符串', function (done) {
             var router = new Router();
             var matched = null;
 
@@ -831,7 +831,7 @@ describe('测试文件', function () {
                 .serial(done);
         });
 
-        pipe('小route #match 正则', function (done) {
+        pipe('小 route #match 正则', function (done) {
             var router = new Router();
             var matched = null;
 
@@ -856,7 +856,7 @@ describe('测试文件', function () {
                 .serial(done);
         });
 
-        pipe('小route #match 空', function (done) {
+        pipe('小 route #match 空', function (done) {
             var router = new Router();
             var matched = null;
 
@@ -923,7 +923,7 @@ describe('测试文件', function () {
                 .serial(done);
         });
 
-        pipe('小route 单个 meta', function (done) {
+        pipe('小 route 单个 meta', function (done) {
             var router = new Router();
             var meta = null;
 
@@ -947,7 +947,7 @@ describe('测试文件', function () {
                 .serial(done);
         });
 
-        pipe('小route 多个 meta', function (done) {
+        pipe('小 route 多个 meta', function (done) {
             var router = new Router();
             var meta = null;
 
@@ -971,6 +971,46 @@ describe('测试文件', function () {
                     expect(meta.b).toEqual(3);
                     expect(meta.c).toEqual(4);
                     next();
+                })
+                .serial(done);
+        });
+
+        pipe('小 route.direction', function (done) {
+            var router = new Router();
+            var thisDirectionList = [];
+            var prevDirectionList = [];
+
+            router.start();
+            router.on('afterChange', function (route, prev) {
+                thisDirectionList.push(route.direction);
+                prevDirectionList.push(prev ? prev.direction : null);
+            });
+
+            plan
+                .task(function (next) {
+                    // /abc
+                    location.hash = '#/abc';
+                    delay(next);
+                }).task(function (next) {
+                    // /
+                    history.back();
+                    delay(next);
+                }).task(function (next) {
+                    // /abc
+                    history.forward();
+                    delay(next);
+                }).task(function (next) {
+                    router.destroy();
+                    expect(thisDirectionList.length).toBe(4);
+                    expect(thisDirectionList[0]).toBe('forward');
+                    expect(thisDirectionList[1]).toBe('forward');
+                    expect(thisDirectionList[2]).toBe('back');
+                    expect(thisDirectionList[3]).toBe('forward');
+                    expect(prevDirectionList[0]).toBe(null);
+                    expect(prevDirectionList[1]).toBe('forward');
+                    expect(prevDirectionList[2]).toBe('back');
+                    expect(prevDirectionList[3]).toBe('forward');
+                    delay(next);
                 })
                 .serial(done);
         });
