@@ -881,6 +881,48 @@ describe('测试文件', function () {
                 .serial(done);
         });
 
+        pipe('router.match meta', function (done) {
+            var router = new Router();
+            var metaList = [];
+            var aList = [];
+            var bList = [];
+            var cList = [];
+
+            router.match({
+                meta: {a: 1, b: 2}
+            }, function () {
+                metaList.push(this.meta);
+                aList.push(this.meta.a);
+                bList.push(this.meta.b);
+                cList.push(this.meta.c);
+            }).match({
+                path: '/',
+                meta: {c: 3, b: 4}
+            }, function () {
+                metaList.push(this.meta);
+                aList.push(this.meta.a);
+                bList.push(this.meta.b);
+                cList.push(this.meta.c);
+            }).start();
+
+            plan
+                .task(function (next) {
+                    router.destroy();
+                    delay(next);
+                })
+                .task(function (next) {
+                    expect(metaList.length).toBe(2);
+                    expect(aList[0]).toBe(1);
+                    expect(aList[1]).toBe(1);
+                    expect(bList[0]).toBe(2);
+                    expect(bList[1]).toBe(4);
+                    expect(cList[0]).toBe(undefined);
+                    expect(cList[1]).toBe(3);
+                    delay(next);
+                })
+                .serial(done);
+        });
+
         pipe('小route 单个 meta', function (done) {
             var router = new Router();
             var meta = null;
