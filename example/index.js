@@ -37,6 +37,10 @@ router
     //         console.log('永不会执行');
     //     })
 
+    .match('/user/**', function (next) {
+        next();
+    })
+
     // 具名路由
     .match({
         path: '/user/abc/:abc1',
