@@ -138,11 +138,12 @@ var Router = Events.extend({
 
     /**
      * 重写为新地址
-     * @param to
+     * @param to {String} 地址
+     * @param [ignore=false] {Boolean} 是否忽略控制器变化
      * @returns {String}
      */
-    rewrite: function (to) {
-        return this[_navigator].rewrite(to);
+    rewrite: function (to, ignore) {
+        return this[_navigator].rewrite(to, ignore);
     },
 
     /**

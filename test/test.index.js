@@ -142,7 +142,7 @@ describe('测试文件', function () {
                 .serial(done);
         });
 
-        pipe('#rewrite', function (done) {
+        pipe('#rewrite base', function (done) {
             var changeTimes = 0;
             var router = new Router();
 
@@ -164,6 +164,89 @@ describe('测试文件', function () {
                 .task(function (next) {
                     expect(changeTimes).toEqual(2);
                     expect(location.hash).toEqual('#/a');
+                    delay(next);
+                })
+                .serial(done);
+        });
+
+        pipe('#rewrite ignore=false', function (done) {
+            var router = new Router();
+            var one = 0;
+            var two = 0;
+
+            router.get('/', function () {
+                one++;
+                return 1;
+            }).get('/2', function () {
+                two++;
+                return 2;
+            });
+
+            router.start();
+
+            router.on('afterChange', function (route) {
+                switch (route.controller) {
+                    case 1:
+                        route.rewrite('/2');
+                        break;
+                }
+            });
+
+            plan
+                .task(function (next) {
+                    router.rewrite('/2');
+                    delay(next);
+                })
+                .task(function (next) {
+                    router.destroy();
+                    delay(next);
+                })
+                .task(function (next) {
+                    expect(one).toEqual(1);
+                    expect(two).toEqual(1);
+                    expect(location.hash).toEqual('#/2');
+                    delay(next);
+                })
+                .serial(done);
+        });
+
+        pipe('#rewrite ignore=true', function (done) {
+            var router = new Router();
+            var one = 0;
+            var two = 0;
+
+            router.get('/', function () {
+                one++;
+                return 1;
+            }).get('/2', function () {
+                two++;
+                return 2;
+            });
+
+            router.start();
+
+            router.on('afterChange', function (route) {
+                console.log(route.controller);
+                switch (route.controller) {
+                    case 1:
+                        route.rewrite('/2', true);
+                        break;
+                }
+            });
+
+            plan
+                .task(function (next) {
+                    router.rewrite('/2');
+                    delay(next);
+                })
+                .task(function (next) {
+                    router.destroy();
+                    delay(next);
+                })
+                .task(function (next) {
+                    expect(one).toEqual(1);
+                    expect(two).toEqual(0);
+                    expect(location.hash).toEqual('#/2');
                     delay(next);
                 })
                 .serial(done);
@@ -992,26 +1075,26 @@ describe('测试文件', function () {
                     location.hash = '#/abc';
                     delay(next);
                 }).task(function (next) {
-                    // /
-                    history.back();
-                    delay(next);
-                }).task(function (next) {
-                    // /abc
-                    history.forward();
-                    delay(next);
-                }).task(function (next) {
-                    router.destroy();
-                    expect(thisDirectionList.length).toBe(4);
-                    expect(thisDirectionList[0]).toBe('forward');
-                    expect(thisDirectionList[1]).toBe('forward');
-                    expect(thisDirectionList[2]).toBe('back');
-                    expect(thisDirectionList[3]).toBe('forward');
-                    expect(prevDirectionList[0]).toBe(null);
-                    expect(prevDirectionList[1]).toBe('forward');
-                    expect(prevDirectionList[2]).toBe('back');
-                    expect(prevDirectionList[3]).toBe('forward');
-                    delay(next);
-                })
+                // /
+                history.back();
+                delay(next);
+            }).task(function (next) {
+                // /abc
+                history.forward();
+                delay(next);
+            }).task(function (next) {
+                router.destroy();
+                expect(thisDirectionList.length).toBe(4);
+                expect(thisDirectionList[0]).toBe('forward');
+                expect(thisDirectionList[1]).toBe('forward');
+                expect(thisDirectionList[2]).toBe('back');
+                expect(thisDirectionList[3]).toBe('forward');
+                expect(prevDirectionList[0]).toBe(null);
+                expect(prevDirectionList[1]).toBe('forward');
+                expect(prevDirectionList[2]).toBe('back');
+                expect(prevDirectionList[3]).toBe('forward');
+                delay(next);
+            })
                 .serial(done);
         });
 

@@ -53,14 +53,16 @@ module.exports = function (mode, split) {
 
         /**
          * 重写为新地址
-         * @param to
+         * @param to {String} 地址
+         * @param [ignore=false] {Boolean} 是否忽略控制器变化
          * @returns {String}
          */
-        rewrite: function (to) {
+        rewrite: function (to, ignore) {
             return rewrite(
                 isHashMode ?
                     hashbang.set(url.resolve(hashbang.get(), to), split) :
-                    url.resolve(getUrl(), to)
+                    url.resolve(getUrl(), to),
+                ignore
             );
         },
 
@@ -121,12 +123,13 @@ function redirect(to) {
 /**
  * 重写 url
  * @param to
+ * @param ignore
  * @returns {*}
  */
-function rewrite(to) {
+function rewrite(to, ignore) {
     nextTick(function () {
         // location.replace(to);
-        history.replaceState(history.state, null, to);
+        history.replaceState(ignore ? history.state : null, null, to);
         emit();
     });
     return to;

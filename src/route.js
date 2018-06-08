@@ -58,10 +58,11 @@ var Route = Class.extend({
 
     /**
      * 重写
-     * @param to
+     * @param to {String} 地址
+     * @param [ignore=false] {Boolean} 是否忽略控制器变化
      */
-    rewrite: function (to) {
-        return this[_navigator].rewrite(to);
+    rewrite: function (to, ignore) {
+        return this[_navigator].rewrite(to, ignore);
     },
 
     /**

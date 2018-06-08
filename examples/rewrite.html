@@ -30,22 +30,11 @@
 </head>
 <body ontouchstart="">
 
-<ul>
-    <li><a href="#!/user/abc/123">#!/user/abc/123</a></li>
-    <li><a href="#!/user/abc/12345?x=1">#!/user/abc/12345?x=1</a></li>
-    <li><a href="#!/user/def/456">#!/user/def/456</a></li>
-    <li><a href="#!/user/ghi/789">#!/user/ghi/789</a></li>
-    <li><a href="#!/aaa">#!/aaa</a></li>
-    <li><a href="#!/bbb">#!/bbb</a></li>
-    <li><a href="#!/ccc">#!/ccc</a></li>
-    <li><a href="#!/ddd">#!/ddd</a></li>
-    <li><a href="#!/eee">#!/eee 超长时间的控制器（这里需要放弃其他路由变化）</a></li>
-    <li><button id="rewrite">rewriteQuery ?r=[random] </button></li>
-</ul>
+<p>当前路由会替换成 “/abc”</p>
 
 <script src="/node_modules/coolie.js/coolie.js"
-        data-config="/example/coolie-config.js"
-data-main="index.js"></script>
+        data-config="/examples/coolie-config.js"
+data-main="rewrite.js"></script>
 
 </body>
 </html>
