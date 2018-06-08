@@ -226,7 +226,6 @@ describe('测试文件', function () {
             router.start();
 
             router.on('afterChange', function (route) {
-                console.log(route.controller);
                 switch (route.controller) {
                     case 1:
                         route.rewrite('/2', true);
