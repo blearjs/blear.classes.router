@@ -2,7 +2,7 @@
  * 文件描述
  * @author ydr.me
  * @create 2018-03-07 16:22
- * @update 2018-03-07 16:22
+ * @update 2018年06月26日
  */
 
 
@@ -12,10 +12,13 @@ var hashbang = require('blear.core.hashbang');
 var event = require('blear.core.event');
 var time = require('blear.utils.time');
 var url = require('blear.utils.url');
+var object = require('blear.utils.object');
 
 var MODE_OF_HASH = 'hash';
 var MODE_OF_PATH = 'path';
 var nextTick = time.nextTick;
+
+fixSafriHistroyBUG();
 
 module.exports = function (mode, split) {
     var isHashMode = mode === MODE_OF_HASH;
@@ -142,4 +145,66 @@ function emit() {
     event.emit(window, 'popstate');
 }
 
+
+/**
+ * 修正 safari 在 history 上的问题
+ * ```
+ * history.pushState('a', null, '#/a');
+ * var href = location.href;
+ * history.replaceState('b', null, '#/b');
+ * location.assign(href);
+ * console.log(history.state);
+ * // 理论上，这个返回值应该是 null，但 safari 返回值是 b
+ * ```
+ */
+function fixSafriHistroyBUG() {
+    var href = location.href;
+    var location2 = window.location2 = {};
+
+    location2.assign = function (loc) {
+        href = suffixURLRandomKey(loc);
+        location.assign(href);
+        history.replaceState(null, null, location.href);
+    };
+
+    location2.replace = function (loc) {
+        href = suffixURLRandomKey(loc);
+        history.replaceState(null, null, href);
+        location.replace(href);
+    };
+
+    object.define(location2, 'href', {
+        get: function () {
+            return href;
+        },
+        set: function (loc) {
+            location2.assign(loc);
+        }
+    });
+}
+
+
+/**
+ * 给地址添加一个随机尾号，避免缓存导致 history.state 获取失败
+ * @param loc
+ * @returns {string}
+ */
+function suffixURLRandomKey(loc) {
+    var list = loc.split('#');
+    var main = list.shift();
+    var hash = list.join('#');
+    var sf = '_=' + Date.now();
+    var co = '?';
+
+    if (hash) {
+        if (/\?/.test(hash)) {
+            co = '&';
+        }
+        hash += co + sf;
+    } else {
+        hash += co + sf;
+    }
+
+    return main + '#' + hash;
+}
 
