@@ -1243,6 +1243,16 @@ describe('测试文件', function () {
                 .serial(done);
         });
 
+        pipe('location2', function (done) {
+            location2.href = '#/a';
+            expect(location.href).toMatch(/#\/a\?_=\d+/);
+            location2.assign('#/b?x=1');
+            expect(location.href).toMatch(/#\/b\?x=1&_=\d+/);
+            location2.replace('#/c');
+            expect(location.href).toMatch(/#\/c\?_=\d+/);
+            done();
+        });
+
         water.serial(done);
     }, 10000000);
 });
