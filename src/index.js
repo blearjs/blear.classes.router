@@ -377,6 +377,11 @@ prop[_afterChange] = function (route) {
         previousRoute.direction = direction;
     }
 
+    // 前进方向：当前路由的前一个
+    if (direction === 'forward') {
+        route.prev = previousRoute;
+    }
+
     route.direction = direction;
     the.emit('afterChange', route, the[_previousRoute]);
     the[_previousRoute] = route;
